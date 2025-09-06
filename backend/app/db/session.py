@@ -8,7 +8,7 @@ from ..db.base import Base
 
 
 # Always load backend/.env explicitly
-ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
+ENV_PATH = Path(__file__).resolve().parent.parent.parent / ".env"
 load_dotenv(ENV_PATH, override=True)
 
 DATABASE_URL = os.getenv("DATABASE_URL")
