@@ -28,7 +28,7 @@ python-multipart==0.0.9
 #    pip install -r requirements.txt
 #
 # 3) Start backend server (from project root):
-#    uvicorn backend.app.main:app --reload --env-file backend/.env --port 8000
+#    python -m uvicorn backend.app.main:app --reload --env-file backend/.env
 #
 # 4) Start frontend (from frontend/ folder):
 #    npm install
