@@ -36,6 +36,7 @@ python-multipart==0.0.9
 #
 # Backend runs on:   http://127.0.0.1:8000
 # Frontend runs on:  http://127.0.0.1:5173 (default Vite port)
+# python -m backend.app.db.seed to run the seed
 
 
 #pip install -r requirements.txt  run this in terminal so you have all the deps install

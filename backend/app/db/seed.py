@@ -1,8 +1,11 @@
+# backend/app/db/seed.py
 from sqlalchemy.orm import Session
-from app.db.session import SessionLocal, engine
-from app.db.base import Base
-from app.db.models.user import User
-from app.core.security import hash_password
+
+from .session import SessionLocal, engine          # db/session.py
+from .base import Base                             # db/base.py
+from .models.user import User                      # db/models/user.py
+from ..core.security import hash_password          # core/security.py
+
 
 def seed():
     Base.metadata.create_all(bind=engine)
@@ -34,6 +37,7 @@ def seed():
         print("✅ Seeding complete.")
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     seed()
