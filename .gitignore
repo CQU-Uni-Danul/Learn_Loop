@@ -25,7 +25,7 @@ venv/
 # =======================
 # IDE & OS
 # =======================
-.vscode
+.vscode/
 .idea/
 *.swp
 .DS_Store
