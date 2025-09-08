@@ -67,7 +67,7 @@ export default function Login() {
                 <span className="text-white font-bold text-base sm:text-lg md:text-xl">📚</span>
               </div>
               <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 mb-1">Welcome Back</h1>
-              <p className="text-slate-500 text-xs sm:text-sm">Sign in to EduManage Pro</p>
+              <p className="text-slate-500 text-xs sm:text-sm">Sign in to LearnLoop</p>
             </div>
 
             {/* Form */}
@@ -154,7 +154,7 @@ export default function Login() {
           {/* Footer */}
           <div className="text-center mt-4">
             <p className="text-white text-[10px] sm:text-xs opacity-80">
-              © 2024 EduManage Pro. All rights reserved.
+              © 2024 LearnLoop. All rights reserved.
             </p>
           </div>
         </div>
