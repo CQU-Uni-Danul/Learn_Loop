@@ -71,7 +71,7 @@ export default function StudentDashboard() {
               🎒
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-slate-800">EduManage Pro • Student</h1>
+              <h1 className="text-lg font-semibold text-slate-800">LearnLoop • Student</h1>
               <p className="text-[11px] text-slate-500">My classes & schedule</p>
             </div>
           </div>
