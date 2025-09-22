@@ -26,37 +26,39 @@ function ClassRow({ subject, section, time }) {
 }
 
 export default function TeacherDashboard() {
-  const nav = useNavigate();
+  const navigate = useNavigate();
   const [me, setMe] = useState(null);
   const [today, setToday] = useState([]);
   const [loading, setLoading] = useState(true);
   const [materials, setMaterials] = useState([]);
+  const [message, setMessage] = useState('');
+  const [notification, setNotification] = useState('');
 
   useEffect(() => {
     const token = sessionStorage.getItem("accessToken");
     const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
-    if (!token || !user || user.role !== "teacher") { nav("/"); return; }
+    if (!token || !user || user.role !== "teacher") { navigate("/"); return; }
 
     (async () => {
       try {
         const profile = await api("/api/auth/me");
         setMe(profile);
-        const sched = await api("/teacher/schedule/me");   // from backend router
+        const sched = await api("/teacher/schedule/me");
         setToday(sched.today ?? []);
         const files = await api("/teacher/materials");
         setMaterials(files ?? []);
       } catch {
-        nav("/");
+        navigate("/");
       } finally {
         setLoading(false);
       }
     })();
-  }, [nav]);
+  }, [navigate]);
 
   const logout = () => {
     sessionStorage.removeItem("accessToken");
     sessionStorage.removeItem("currentUser");
-    nav("/");
+    navigate("/");
   };
 
   const handleUpload = async (file) => {
@@ -73,9 +75,22 @@ export default function TeacherDashboard() {
     alert("Uploaded!");
   };
 
+  const sendMessage = async () => {
+    if (!message) return;
+    await api("/teacher/messages/send", { method: "POST", body: JSON.stringify({ content: message }) });
+    setMessage('');
+    alert("Message sent!");
+  };
+
+  const sendNotification = async () => {
+    if (!notification) return;
+    await api("/teacher/notifications/send", { method: "POST", body: JSON.stringify({ content: notification }) });
+    setNotification('');
+    alert("Notification sent!");
+  };
+
   return (
     <div className="min-h-dvh tch-bg">
-
       {/* Header */}
       <header className="bg-white border-b border-slate-200 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -102,7 +117,7 @@ export default function TeacherDashboard() {
         </div>
       </header>
 
-      {/* amber top line like admin/student */}
+      {/* amber top line */}
       <div className="topline-tch" />
 
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-5">
@@ -127,6 +142,7 @@ export default function TeacherDashboard() {
               <ClassRow key={i} subject={c.subject} section={c.section} time={c.time} />
             ))
           )}
+          <button onClick={() => navigate('/timetable')} className="btn btn-tch-outline m-4">Edit Timetable</button>
         </div>
 
         {/* Teaching materials */}
@@ -163,6 +179,33 @@ export default function TeacherDashboard() {
           ) : (
             <p className="text-xs text-slate-500">No materials uploaded yet.</p>
           )}
+          <button onClick={() => navigate('/materials')} className="btn btn-tch-outline">View All Materials</button>
+        </div>
+
+        {/* Messaging */}
+        <div className="tch-card p-4 space-y-3">
+          <div className="tch-chip">💬 Messaging</div>
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Send updates to students"
+            className="w-full p-2 border border-slate-300 rounded"
+          />
+          <button onClick={sendMessage} className="btn btn-tch">Send Message</button>
+          <button onClick={() => navigate('/messages')} className="btn btn-tch-outline">View Messages</button>
+        </div>
+
+        {/* Notifications */}
+        <div className="tch-card p-4 space-y-3">
+          <div className="tch-chip">🔔 Notifications</div>
+          <textarea
+            value={notification}
+            onChange={(e) => setNotification(e.target.value)}
+            placeholder="Notify students about assignments or events"
+            className="w-full p-2 border border-slate-300 rounded"
+          />
+          <button onClick={sendNotification} className="btn btn-tch">Send Notification</button>
+          <button onClick={() => navigate('/notifications')} className="btn btn-tch-outline">View Notifications</button>
         </div>
 
         {/* Quick actions */}
