@@ -27,6 +27,35 @@ CREATE TABLE IF NOT EXISTS users (
   UNIQUE KEY uk_users_email (email)
 ) ENGINE=InnoDB;
 
+
+-- =====================
+-- TABLE: Students
+-- =====================
+
+-- =====================
+-- TABLE: students
+-- =====================
+CREATE TABLE IF NOT EXISTS students (
+  student_id  BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  full_name   VARCHAR(100)     NOT NULL,
+  email       VARCHAR(255)     NOT NULL,
+  role        ENUM('student')  NOT NULL DEFAULT 'student',
+  grade       INT UNSIGNED     NOT NULL,
+  class       VARCHAR(10)      NOT NULL,
+  PRIMARY KEY (student_id),
+  UNIQUE KEY uk_students_email (email)
+) ENGINE=InnoDB;
+
+-- =====================
+-- SAMPLE DATA
+-- =====================
+INSERT INTO students (full_name, email, role, grade, class)
+VALUES
+  ('Alice Student','alice@student.edu','student',8,'A'),
+  ('Bob Student','bob@student.edu','student',9,'B'),
+  ('Cathy Student','cathy@student.edu','student',10,'C');
+
+
 -- =====================
 -- TABLE: timetables
 -- =====================
@@ -133,8 +162,11 @@ SELECT s.user_id, r.user_id, 'Hi, could you explain homework 1?'
 FROM users s CROSS JOIN users r
 WHERE s.email='alice@student.edu' AND r.email='tom@school.edu';
 
+
 SELECT * FROM users;
+SELECT * FROM students;
 SELECT * FROM timetables;
 SELECT * FROM materials;
 SELECT * FROM notifications;
 SELECT * FROM messages;
+
