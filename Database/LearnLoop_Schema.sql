@@ -163,10 +163,12 @@ WHERE c.class_name='8A' AND t.email='tom@school.edu'
 ON DUPLICATE KEY UPDATE subject_name = VALUES(subject_name);
 
 INSERT INTO timetables (class_id, teacher_id, subject_name, day_of_week, start_time, end_time)
-SELECT c.class_id, t.user_id, 'Physics','Wednesday','11:00:00','12:00:00'
+SELECT c.class_id, t.user_id, 'English','Thursday','10:00:00','11:00:00'
 FROM classes c, users t
 WHERE c.class_name='8A' AND t.email='tom@school.edu'
 ON DUPLICATE KEY UPDATE subject_name = VALUES(subject_name);
+
+
 
 INSERT INTO timetables (class_id, teacher_id, subject_name, day_of_week, start_time, end_time)
 SELECT c.class_id, t.user_id, 'Physics','Wednesday','11:00:00','12:30:00'
@@ -180,6 +182,5 @@ SELECT * FROM classes;
 SELECT * FROM class_students;
 SELECT * FROM timetables;
 SELECT * FROM students;
-
 
 
