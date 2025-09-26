@@ -35,21 +35,33 @@ export default function StudentDashboard() {
   useEffect(() => {
     const token = sessionStorage.getItem("accessToken");
     const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
-    if (!token || !user) { nav("/"); return; }
-    if (user.role !== "student") { nav("/"); return; }
 
-    (async () => {
+    if (!token || !user) {
+      nav("/");
+      return;
+    }
+    if (user.role !== "student") {
+      nav("/");
+      return;
+    }
+
+    const fetchProfile = async () => {
       try {
         const profile = await api("/api/auth/me");
         setMe(profile);
-        const timetable = await api(`/timetable/${profile.id}`);
-        setWeek(timetable.week ?? []);
-      } catch {
+
+        // TEMPORARY: Skip timetable fetch for now to prevent errors
+        // const timetable = await api(`/student/timetable/${profile.user_id}`);
+        // setWeek(timetable.week ?? []);
+      } catch (err) {
+        console.error(err);
         nav("/");
       } finally {
         setLoading(false);
       }
-    })();
+    };
+
+    fetchProfile();
   }, [nav]);
 
   const logout = () => {
@@ -58,8 +70,8 @@ export default function StudentDashboard() {
     nav("/");
   };
 
-  const nextClass =
-    week?.find(d => d.items?.length)?.items?.[0] || null;
+  // TEMPORARY: Mock nextClass until timetable is available
+  const nextClass = null;
 
   return (
     <div className="min-h-dvh bg-gradient-to-b from-emerald-50 to-emerald-100/50">
@@ -71,7 +83,9 @@ export default function StudentDashboard() {
               🎒
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-slate-800">EduManage Pro • Student</h1>
+              <h1 className="text-lg font-semibold text-slate-800">
+                LearnLoop • Student
+              </h1>
               <p className="text-[11px] text-slate-500">My classes & schedule</p>
             </div>
           </div>
@@ -79,7 +93,7 @@ export default function StudentDashboard() {
             {me && (
               <>
                 <span className="hidden sm:inline text-sm text-slate-600">
-                  Welcome, {me.name.split(" ")[0]}
+                  Welcome, {me?.full_name?.split(" ")[0]}
                 </span>
                 <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-sm font-semibold">
                   S
@@ -101,7 +115,7 @@ export default function StudentDashboard() {
 
       {/* Content */}
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-5">
-        {/* Section header card */}
+        {/* Section header */}
         <div className="stu-card p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="stu-chip inline-flex items-center gap-1">
@@ -109,17 +123,9 @@ export default function StudentDashboard() {
             </span>
             {me && (
               <span className="text-xs text-slate-500">
-                {me.name} • <span className="text-slate-400">{me.email}</span>
+                {me?.full_name} • <span className="text-slate-400">{me?.email}</span>
               </span>
             )}
-          </div>
-          <div className="hidden sm:flex items-center gap-2">
-            <button className="px-3 py-1.5 text-xs rounded-lg border border-slate-300 hover:bg-slate-50">
-              This Week
-            </button>
-            <button className="px-3 py-1.5 text-xs rounded-lg border border-slate-300 hover:bg-slate-50">
-              Next Week
-            </button>
           </div>
         </div>
 
@@ -131,8 +137,12 @@ export default function StudentDashboard() {
                 ⏰
               </div>
               <div>
-                <div className="text-sm font-medium text-slate-800">Next up: {nextClass.subject}</div>
-                <div className="text-xs text-slate-500">with {nextClass.teacher}</div>
+                <div className="text-sm font-medium text-slate-800">
+                  Next up: {nextClass.subject}
+                </div>
+                <div className="text-xs text-slate-500">
+                  with {nextClass.teacher} ({nextClass.day})
+                </div>
               </div>
             </div>
             <div className="stu-time">{nextClass.start} – {nextClass.end}</div>
@@ -142,13 +152,9 @@ export default function StudentDashboard() {
         {/* Timetable grid */}
         {loading ? (
           <div className="stu-card p-4 text-sm text-slate-500">Loading…</div>
-        ) : week.length === 0 ? (
-          <div className="stu-card p-4 text-sm text-slate-500">No classes found.</div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-            {week.map((d) => (
-              <DayCard key={d.day} day={d.day} items={d.items} />
-            ))}
+          <div className="stu-card p-4 text-sm text-slate-500">
+            Timetable fetch temporarily disabled.
           </div>
         )}
 
