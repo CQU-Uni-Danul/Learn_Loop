@@ -1,7 +1,7 @@
-import os
+from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
 from jose import jwt, JWTError
-from passlib.context import CryptContext
+import os
 
 JWT_SECRET = os.getenv("JWT_SECRET", "devsecret")
 JWT_ALG = os.getenv("JWT_ALG", "HS256")
@@ -10,10 +10,11 @@ JWT_EXPIRE_MIN = int(os.getenv("JWT_EXPIRE_MIN", "120"))
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(plain: str) -> str:
-    return pwd_context.hash(plain)
+    return pwd_context.hash(plain[:72])
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    return pwd_context.verify(plain[:72], hashed)
+
 
 def create_access_token(*, sub: str, expires_minutes: int = JWT_EXPIRE_MIN) -> str:
     now = datetime.now(timezone.utc)
