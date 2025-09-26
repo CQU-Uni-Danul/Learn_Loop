@@ -37,7 +37,7 @@ async def get_timetable(
         raise HTTPException(status_code=403, detail="Not authorized to view this timetable")
 
     sql = """
-        SELECT tt.day_of_week AS day,
+        SELECT DISTINCT tt.day_of_week AS day,
                tt.start_time   AS start,
                tt.end_time     AS end,
                tt.subject_name AS subject,
@@ -46,7 +46,7 @@ async def get_timetable(
         JOIN classes c ON cs.class_id = c.class_id
         JOIN timetables tt ON tt.class_name = c.class_name
         LEFT JOIN users u ON tt.user_id = u.user_id
-        WHERE cs.student_id = %s
+        WHERE cs.student_id = 1
         ORDER BY FIELD(tt.day_of_week,
                        'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'),
                  tt.start_time;

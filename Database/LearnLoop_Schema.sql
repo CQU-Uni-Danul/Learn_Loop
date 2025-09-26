@@ -113,17 +113,31 @@ CREATE TABLE IF NOT EXISTS messages (
 ) ENGINE=InnoDB;
 
 -- =====================
--- SAMPLE DATA
+-- SAMPLE DATA (with bcrypt hashes)
 -- =====================
 
 -- Users
 INSERT INTO users (full_name, email, password_hash, role)
 VALUES
-  ('Alice Student','alice@student.edu','hash1','student'),
-  ('Bob Student','bob@student.edu','hash2','student'),
-  ('Cathy Student','cathy@student.edu','hash3','student'),
-  ('Tom Teacher','tom@school.edu','hash4','teacher'),
-  ('Amara Admin','amara@school.edu','hash5','admin')
+  -- alice@student.edu / student123
+  ('Alice Student','alice@student.edu',
+   '$2b$12$AKS2vSxS3Iq5OO96DMzzEuknMMfh0/O/kLbDnPP050PijmJhPqhhu','student'),
+
+  -- bob@student.edu / bob123
+  ('Bob Student','bob@student.edu',
+   '$2b$12$dXJysC.5wV7oH/o6MJnTOO4t8Vcxgwl7QOzZpAemzXnL0gOHXjRi2','student'),
+
+  -- cathy@student.edu / cathy123
+  ('Cathy Student','cathy@student.edu',
+   '$2b$12$Ldz2i7KwsmOGpQoGz0BMu.LRSlgYrbfQvbrShQH5rT8a41uCDEqRW','student'),
+
+  -- tom@school.edu / teacher123
+  ('Tom Teacher','tom@school.edu',
+   '$2b$12$QHjzj2u6Wykv9oQz7tQdZe2H/3aY0Y3wG2ZfBqfZ4oYpGm6h1Y7Wm','teacher'),
+
+  -- amara@school.edu / admin123
+  ('Amara Admin','amara@school.edu',
+   '$2b$12$FSU4n7jP9Gx7Z.7LhgfLwOqUuQdLz8Yx6X0eHVK/UY3YoKxHhjMze','admin')
 ON DUPLICATE KEY UPDATE email = VALUES(email);
 
 -- Classes
@@ -168,8 +182,6 @@ FROM classes c, users t
 WHERE c.class_name='8A' AND t.email='tom@school.edu'
 ON DUPLICATE KEY UPDATE subject_name = VALUES(subject_name);
 
-
-
 INSERT INTO timetables (class_id, teacher_id, subject_name, day_of_week, start_time, end_time)
 SELECT c.class_id, t.user_id, 'Physics','Wednesday','11:00:00','12:30:00'
 FROM classes c, users t
@@ -181,6 +193,3 @@ SELECT * FROM users;
 SELECT * FROM classes;
 SELECT * FROM class_students;
 SELECT * FROM timetables;
-SELECT * FROM students;
-
-
