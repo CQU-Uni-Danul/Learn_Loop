@@ -1,6 +1,8 @@
 # backend/app/api/routers/students.py
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List, Dict, Any
+from sqlalchemy import text
+
 
 from ...api.deps import get_current_user, require_roles, get_db
 from ...db.models.user import User
@@ -22,42 +24,32 @@ def my_schedule(current: User = Depends(require_roles(["student", "admin"]))):
 
 
 @router.get("/timetable/{student_id}")
-async def get_timetable(
-    student_id: int,
-    db=Depends(get_db),
-    current: User = Depends(require_roles(["student", "admin"]))
-):
-    """
-    Fetch full weekly timetable for a student.
-    Only admins can see any student; students can see only their own.
-    """
-
+async def get_timetable(student_id: int, db=Depends(get_db), current: User = Depends(require_roles(["student", "admin"]))):
     # Security check
     if current.role == "student" and student_id != current.user_id:
-        raise HTTPException(status_code=403, detail="Not authorized to view this timetable")
+        raise HTTPException(status_code=403, detail="Not authorized")
 
-    sql = """
+    sql = text("""
         SELECT DISTINCT tt.day_of_week AS day,
-               tt.start_time   AS start,
-               tt.end_time     AS end,
+               tt.start_time AS start,
+               tt.end_time AS end,
                tt.subject_name AS subject,
-               u.full_name     AS teacher
+               u.full_name AS teacher
         FROM class_students cs
         JOIN classes c ON cs.class_id = c.class_id
         JOIN timetables tt ON tt.class_name = c.class_name
         LEFT JOIN users u ON tt.user_id = u.user_id
-        WHERE cs.student_id = 1
+        WHERE cs.student_id = :student_id
         ORDER BY FIELD(tt.day_of_week,
                        'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'),
                  tt.start_time;
-    """
+    """)
 
-    async with db.cursor(dictionary=True) as cursor:
-        await cursor.execute(sql, (student_id,))
-        rows = await cursor.fetchall()
+    result = db.execute(sql, {"student_id": student_id})
+    rows = [dict(r) for r in result.fetchall()]
 
     if not rows:
-        raise HTTPException(status_code=404, detail="No timetable found for this student")
+        raise HTTPException(status_code=404, detail="No timetable found")
 
     return {"week": group_by_day(rows)}
 

@@ -8,13 +8,14 @@ CREATE DATABASE IF NOT EXISTS school_mgmt
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
+-- DROP DATABASE IF EXISTS school_mgmt;
 USE school_mgmt;
 
 -- =====================
 -- TABLE: users
 -- =====================
 CREATE TABLE IF NOT EXISTS users (
-  user_id        BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id        INT UNSIGNED NOT NULL AUTO_INCREMENT,
   full_name      VARCHAR(100)     NOT NULL,
   email          VARCHAR(255)     NOT NULL,
   password_hash  VARCHAR(255)     NOT NULL,
@@ -28,8 +29,8 @@ CREATE TABLE IF NOT EXISTS users (
 -- TABLE: students
 -- =====================
 CREATE TABLE IF NOT EXISTS students (
-  student_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  user_id    BIGINT UNSIGNED NOT NULL,
+  student_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id    INT UNSIGNED NOT NULL,
   grade      VARCHAR(20) NOT NULL,
   class_name VARCHAR(20) NOT NULL,
   PRIMARY KEY (student_id),
@@ -63,6 +64,14 @@ CREATE TABLE IF NOT EXISTS timetables (
     ON UPDATE CASCADE,
   CONSTRAINT chk_time_order CHECK (start_time < end_time)
 ) ENGINE=InnoDB;
+
+CREATE TABLE class_students (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    class_id INT NOT NULL,
+    FOREIGN KEY (student_id) REFERENCES students(student_id),
+    FOREIGN KEY (class_id) REFERENCES classes(class_id)
+);
 
 -- =====================
 -- TABLE: materials
