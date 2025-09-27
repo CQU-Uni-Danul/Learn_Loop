@@ -50,7 +50,7 @@ async def get_timetable(
     """)
 
     result = db.execute(sql, {"student_id": student_id})
-    # ✅ Use .mappings() to get dicts
+    # ✅ Convert rows to dicts
     rows = [dict(r) for r in result.mappings().all()]
 
     if not rows:
