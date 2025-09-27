@@ -147,7 +147,7 @@ export default function StudentDashboard() {
 
         {/* Timetable grid */}
         {loading ? (
-          <div className="stu-card p-4 text-sm text-slate-500">Loading…</div>
+          <div className="stu-card p-4 text-sm text-slate-500">Loading…!</div>
         ) : week.length === 0 ? (
           <div className="stu-card p-4 text-sm text-slate-500">No classes found.</div>
         ) : (
