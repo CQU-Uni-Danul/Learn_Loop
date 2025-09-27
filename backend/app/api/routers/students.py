@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List, Dict, Any
 from sqlalchemy import text
-
+from sqlalchemy.orm import Session
 
 from ...api.deps import get_current_user, require_roles, get_db
 from ...db.models.user import User
@@ -22,23 +22,27 @@ def my_schedule(current: User = Depends(require_roles(["student", "admin"]))):
     }
 
 
-
 @router.get("/timetable/{student_id}")
-async def get_timetable(student_id: int, db=Depends(get_db), current: User = Depends(require_roles(["student", "admin"]))):
+async def get_timetable(
+    student_id: int,
+    db: Session = Depends(get_db),
+    current: User = Depends(require_roles(["student", "admin"]))
+):
     # Security check
     if current.role == "student" and student_id != current.user_id:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     sql = text("""
-        SELECT DISTINCT tt.day_of_week AS day,
-               tt.start_time AS start,
-               tt.end_time AS end,
-               tt.subject_name AS subject,
-               u.full_name AS teacher
-        FROM class_students cs
-        JOIN classes c ON cs.class_id = c.class_id
-        JOIN timetables tt ON tt.class_name = c.class_name
-        LEFT JOIN users u ON tt.user_id = u.user_id
+        SELECT DISTINCT
+            tt.day_of_week AS day,
+            tt.start_time AS start,
+            tt.end_time AS end,
+            c.class_name AS subject,
+            u.full_name AS teacher
+        FROM timetables tt
+        JOIN class_students cs ON cs.student_id = tt.student_id
+        JOIN classes c ON tt.class_id = c.class_id
+        LEFT JOIN users u ON tt.teacher_id = u.user_id
         WHERE cs.student_id = :student_id
         ORDER BY FIELD(tt.day_of_week,
                        'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'),
@@ -46,7 +50,8 @@ async def get_timetable(student_id: int, db=Depends(get_db), current: User = Dep
     """)
 
     result = db.execute(sql, {"student_id": student_id})
-    rows = [dict(r) for r in result.fetchall()]
+    # ✅ Use .mappings() to get dicts
+    rows = [dict(r) for r in result.mappings().all()]
 
     if not rows:
         raise HTTPException(status_code=404, detail="No timetable found")
