@@ -1,23 +1,21 @@
-
 -- =========================================================
--- LearnLoop_Schema.sql  (School Management System schema)
+-- LearnLoop_Full_Reset.sql  (Clean schema for development)
 -- MySQL 8.0+ | Engine: InnoDB | Charset: utf8mb4
 -- =========================================================
 
--- Uncomment next line for a full reset
--- DROP DATABASE IF EXISTS school_mgmt;
-
+-- Create database if not exists
 CREATE DATABASE IF NOT EXISTS school_mgmt
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
+-- DROP DATABASE IF EXISTS school_mgmt;
 USE school_mgmt;
 
 -- =====================
 -- TABLE: users
 -- =====================
 CREATE TABLE IF NOT EXISTS users (
-  user_id        BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id        INT UNSIGNED NOT NULL AUTO_INCREMENT,
   full_name      VARCHAR(100)     NOT NULL,
   email          VARCHAR(255)     NOT NULL,
   password_hash  VARCHAR(255)     NOT NULL,
@@ -28,23 +26,52 @@ CREATE TABLE IF NOT EXISTS users (
 ) ENGINE=InnoDB;
 
 -- =====================
+-- TABLE: students
+-- =====================
+CREATE TABLE IF NOT EXISTS students (
+  student_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id    INT UNSIGNED NOT NULL,
+  grade      VARCHAR(20) NOT NULL,
+  class_name VARCHAR(20) NOT NULL,
+  PRIMARY KEY (student_id),
+  UNIQUE KEY uk_students_user_id (user_id),
+  CONSTRAINT fk_students_user
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+-- =====================
 -- TABLE: timetables
 -- =====================
 CREATE TABLE IF NOT EXISTS timetables (
   timetable_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  user_id      BIGINT UNSIGNED NOT NULL,
+  student_id   BIGINT UNSIGNED NOT NULL,
+  teacher_id   BIGINT UNSIGNED NOT NULL,
   class_name   VARCHAR(100)     NOT NULL,
   day_of_week  ENUM('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday') NOT NULL,
   start_time   TIME             NOT NULL,
   end_time     TIME             NOT NULL,
   PRIMARY KEY (timetable_id),
-  KEY idx_timetables_user_day_start (user_id, day_of_week, start_time),
-  CONSTRAINT fk_timetables_user
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
+  KEY idx_timetables_student_day_start (student_id, day_of_week, start_time),
+  CONSTRAINT fk_timetables_student
+    FOREIGN KEY (student_id) REFERENCES students(student_id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_timetables_teacher
+    FOREIGN KEY (teacher_id) REFERENCES users(user_id)
     ON DELETE CASCADE
     ON UPDATE CASCADE,
   CONSTRAINT chk_time_order CHECK (start_time < end_time)
 ) ENGINE=InnoDB;
+
+CREATE TABLE class_students (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    class_id INT NOT NULL,
+    FOREIGN KEY (student_id) REFERENCES students(student_id),
+    FOREIGN KEY (class_id) REFERENCES classes(class_id)
+);
 
 -- =====================
 -- TABLE: materials
@@ -103,35 +130,59 @@ CREATE TABLE IF NOT EXISTS messages (
     ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
--- =====================
--- SAMPLE DATA (optional) - comment out in production
--- =====================
-INSERT INTO users (full_name, email, password_hash, role)
-VALUES
-  ('Alice Student','alice@student.edu','hash1','student'),
-  ('Tom Teacher','tom@school.edu','hash2','teacher'),
-  ('Amara Admin','amara@school.edu','hash3','admin')
-ON DUPLICATE KEY UPDATE email = VALUES(email);
+USE school_mgmt;
 
-INSERT INTO timetables (user_id, class_name, day_of_week, start_time, end_time)
-SELECT u.user_id, 'Math 101','Monday','09:00:00','10:30:00'
-FROM users u WHERE u.email='alice@student.edu'
-UNION ALL
-SELECT u.user_id, 'Physics 201','Wednesday','11:00:00','12:30:00'
-FROM users u WHERE u.email='alice@student.edu';
+-- =====================
+-- INSERT STUDENTS
+-- =====================
+-- Assuming users already exist from seed.py
+INSERT INTO students (user_id, grade, class_name)
+SELECT user_id, '8', 'A' FROM users WHERE email='alice@student.edu';
 
+INSERT INTO students (user_id, grade, class_name)
+SELECT user_id, '9', 'B' FROM users WHERE email='bob@student.edu'; -- optional test student
+
+-- =====================
+-- INSERT TIMETABLES
+-- =====================
+-- Alice's timetable
+INSERT INTO timetables (student_id, teacher_id, class_name, day_of_week, start_time, end_time)
+SELECT s.student_id, t.user_id, 'Math 101', 'Monday', '09:00:00', '10:30:00'
+FROM students s
+JOIN users t ON t.email='tom@school.edu'
+WHERE s.user_id = (SELECT user_id FROM users WHERE email='alice@student.edu');
+
+INSERT INTO timetables (student_id, teacher_id, class_name, day_of_week, start_time, end_time)
+SELECT s.student_id, t.user_id, 'Physics 201', 'Wednesday', '11:00:00', '12:30:00'
+FROM students s
+JOIN users t ON t.email='tom@school.edu'
+WHERE s.user_id = (SELECT user_id FROM users WHERE email='alice@student.edu');
+
+-- =====================
+-- INSERT MATERIALS
+-- =====================
 INSERT INTO materials (uploaded_by, title, file_path, description)
-SELECT u.user_id, 'Week 1 Notes','/materials/math101/week1.pdf','Intro to Algebra'
+SELECT u.user_id, 'Week 1 Notes', '/materials/math101/week1.pdf', 'Intro to Algebra'
 FROM users u WHERE u.email='tom@school.edu';
 
+-- =====================
+-- INSERT NOTIFICATIONS
+-- =====================
 INSERT INTO notifications (sent_to, message)
-SELECT u.user_id, 'Welcome to the School Management System!'
-FROM users u WHERE u.email='alice@student.edu';
+SELECT s.user_id, 'Welcome to LearnLoop! Check your schedule.'
+FROM students s
+JOIN users u ON s.user_id=u.user_id
+WHERE u.email='alice@student.edu';
 
+-- =====================
+-- INSERT MESSAGES
+-- =====================
 INSERT INTO messages (sender_id, receiver_id, content)
-SELECT s.user_id, r.user_id, 'Hi, could you explain homework 1?'
-FROM users s CROSS JOIN users r
-WHERE s.email='alice@student.edu' AND r.email='tom@school.edu';
+SELECT s.user_id, t.user_id, 'Hi, could you explain homework 1?'
+FROM students s
+JOIN users t ON t.email='tom@school.edu'
+WHERE s.user_id = (SELECT user_id FROM users WHERE email='alice@student.edu');
+
 
 SELECT * FROM users;
 SELECT * FROM timetables;

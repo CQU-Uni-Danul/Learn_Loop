@@ -13,7 +13,7 @@ from .core.security import verify_password, create_access_token
 from .api.deps import get_current_user
 
 # ⬇️ add this import
-from .api.routers import timetable, teacher
+from .api.routers import timetable, teacher, students
 
 Base.metadata.create_all(bind=engine)
 
@@ -54,3 +54,5 @@ def me(current = Depends(get_current_user)):
 # ⬇️ include the router
 app.include_router(timetable.router)
 app.include_router(teacher.router)
+app.include_router(students.router)
+
