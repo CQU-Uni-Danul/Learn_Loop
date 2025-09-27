@@ -42,8 +42,14 @@ export default function StudentDashboard() {
       try {
         const profile = await api("/api/auth/me");
         setMe(profile);
-        const timetable = await api(`/timetable/${profile.id}`);
+        // const timetable = await api(`/timetable/${profile.id}`);
+        // console.log(timetable.week);
+        // setWeek(timetable.week ?? []);
+
+        const timetable = await api(`/student/timetable/${profile.id}`);
+        console.log(timetable.week);
         setWeek(timetable.week ?? []);
+
       } catch {
         nav("/");
       } finally {
@@ -146,6 +152,7 @@ export default function StudentDashboard() {
           <div className="stu-card p-4 text-sm text-slate-500">No classes found.</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+            
             {week.map((d) => (
               <DayCard key={d.day} day={d.day} items={d.items} />
             ))}
