@@ -241,9 +241,7 @@ const sendNotification = async () => {
           />
 
           <button onClick={sendNotification} className="btn btn-tch">Send Notification</button>
-          <button onClick={testLoadNotifications} className="btn btn-tch-outline">
-  🔍 Test Load Notifications
-</button>
+          
 
           {/* Display sent notifications */}
           {notificationsList.length > 0 && (
