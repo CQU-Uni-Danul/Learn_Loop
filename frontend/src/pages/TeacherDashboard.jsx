@@ -38,32 +38,33 @@ export default function TeacherDashboard() {
 
   // Load profile, schedule, materials, notifications
   useEffect(() => {
-    const token = sessionStorage.getItem("accessToken");
-    const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
-    if (!token || !user || user.role !== "teacher") {
+  const token = sessionStorage.getItem("accessToken");
+  const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
+  if (!token || !user || user.role !== "teacher") {
+    navigate("/");
+    return;
+  }
+
+  (async () => {
+    try {
+      const profile = await apiFetch("/api/auth/me");
+      setMe(profile);
+
+      const sched = await apiFetch("/api/teacher/schedule/me");
+      setToday(sched.schedule ?? []);
+
+      // 👇 UNCOMMENT AND FIX THIS
+      const notifs = await apiFetch("/api/teacher/notifications");
+      console.log("Loaded notifications:", notifs); // Debug log
+      setNotificationsList(notifs.notifications ?? []);
+    } catch (err) {
+      console.error(err);
       navigate("/");
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    (async () => {
-      try {
-        const profile = await apiFetch("/api/auth/me");
-        setMe(profile);
-
-        const sched = await apiFetch("/api/teacher/schedule/me");
-        setToday(sched.schedule ?? []);
-
-        // Load notifications
-        // const notifs = await apiFetch("/api/teacher/notifications");
-        // setNotificationsList(notifs.notifications ?? []);
-      } catch (err) {
-        console.error(err);
-        navigate("/");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [navigate]);
+  })();
+}, [navigate]);
 
   const logout = () => {
     sessionStorage.removeItem("accessToken");
@@ -109,26 +110,10 @@ export default function TeacherDashboard() {
     }
   };
 
- // Updated sendNotification function with better error handling
 const sendNotification = async () => {
   if (!notification) return;
 
   try {
-    console.log('Sending notification with content:', notification);
-    console.log('Current user from session:', JSON.parse(sessionStorage.getItem("currentUser") || "{}"));
-    console.log('Token exists:', !!sessionStorage.getItem("accessToken"));
-    console.log('Token value:', sessionStorage.getItem("accessToken")?.substring(0, 20) + '...');
-    
-    // First, test if we can access our profile (this should work)
-    try {
-      const profile = await apiFetch("/api/auth/me");
-      console.log('Profile fetch successful:', profile);
-    } catch (profileError) {
-      console.error('Profile fetch failed:', profileError);
-      alert('Authentication issue detected. Please log in again.');
-      return;
-    }
-    
     await apiFetch("/api/teacher/notifications/send", {
       method: "POST",
       body: JSON.stringify({ content: notification }),
@@ -136,7 +121,7 @@ const sendNotification = async () => {
 
     setNotification('');
 
-    // // Refresh notifications list
+    // // 👇 UNCOMMENT AND FIX THIS
     // const notifs = await apiFetch("/api/teacher/notifications");
     // setNotificationsList(notifs.notifications ?? []);
 
@@ -256,6 +241,9 @@ const sendNotification = async () => {
           />
 
           <button onClick={sendNotification} className="btn btn-tch">Send Notification</button>
+          <button onClick={testLoadNotifications} className="btn btn-tch-outline">
+  🔍 Test Load Notifications
+</button>
 
           {/* Display sent notifications */}
           {notificationsList.length > 0 && (

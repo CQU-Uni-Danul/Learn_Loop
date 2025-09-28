@@ -21,8 +21,12 @@ export default function NotificationsPage() {
         const profile = await apiFetch("/api/auth/me");
         setMe(profile);
 
-        // const notifs = await apiFetch("/api/teacher/notifications");
-        // setNotifications(notifs.notifications ?? []);
+        const notifs = await apiFetch("/api/teacher/notifications");
+        console.log("Raw notifications response:", notifs);
+        console.log("Notifications array:", notifs.notifications);
+        console.log("Number of notifications:", notifs.notifications?.length);
+        
+        setNotifications(notifs.notifications ?? []);
       } catch (err) {
         console.error(err);
         navigate("/");
@@ -38,6 +42,15 @@ export default function NotificationsPage() {
     navigate("/");
   };
 
+  const refreshNotifications = async () => {
+    try {
+      const notifs = await apiFetch("/api/teacher/notifications");
+      setNotifications(notifs.notifications ?? []);
+    } catch (err) {
+      console.error('Failed to refresh:', err);
+    }
+  };
+
   return (
     <div className="min-h-dvh tch-bg">
       {/* Header */}
@@ -45,7 +58,7 @@ export default function NotificationsPage() {
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button 
-              onClick={() => navigate('/teacher')}
+              onClick={() => navigate('/dashboard')}
               className="text-slate-600 hover:text-slate-800"
             >
               ← Back to Dashboard
@@ -79,14 +92,7 @@ export default function NotificationsPage() {
           <div className="px-4 py-2.5 text-sm font-semibold bg-[rgb(255_251_235)] text-[rgb(217_119_6)] flex items-center justify-between">
             <span>Sent Notifications ({notifications.length})</span>
             <button 
-              onClick={async () => {
-                try {
-                  const notifs = await apiFetch("/api/teacher/notifications");
-                  setNotifications(notifs.notifications ?? []);
-                } catch (err) {
-                  console.error('Failed to refresh:', err);
-                }
-              }}
+              onClick={refreshNotifications}
               className="text-xs px-2 py-1 bg-white rounded text-amber-700 hover:bg-amber-50"
             >
               Refresh
@@ -99,6 +105,7 @@ export default function NotificationsPage() {
             <div className="p-6 text-center text-slate-500">
               <div className="text-4xl mb-2">📭</div>
               <p>No notifications sent yet</p>
+              <p className="text-xs mt-2">Go back to dashboard and send a notification to see it here</p>
             </div>
           ) : (
             <div className="divide-y divide-slate-200">

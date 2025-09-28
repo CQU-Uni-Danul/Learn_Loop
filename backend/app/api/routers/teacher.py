@@ -234,9 +234,12 @@ def send_notification(
 # -----------------------------
 @router.get("/notifications")
 def list_notifications(
-    current: User = Depends(require_roles(["teacher", "admin"])),
+    current: User = Depends(require_roles(["teacher", "admin", "student"])),
     db: Session = Depends(get_db),
 ):
+    print(f"🔥 NOTIFICATIONS ENDPOINT HIT!")  # This should print if endpoint is reached
+    print(f"DEBUG: Successfully authenticated user {current.user_id} with role {current.role}")
+    
     rows = db.execute(
         text("""
             SELECT n.notification_id, n.sent_to, n.message, n.date_sent, n.is_read, u.full_name AS student_name
@@ -248,4 +251,6 @@ def list_notifications(
         """),
         {"tid": current.user_id}
     ).mappings().all()
+    
+    print(f"DEBUG: Found {len(rows)} notifications")
     return {"notifications": list(rows)}

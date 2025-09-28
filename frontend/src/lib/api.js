@@ -11,10 +11,11 @@ const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:8000";
 // Updated apiFetch function with better error logging
 export async function apiFetch(path, options = {}) {
   const token = sessionStorage.getItem("accessToken");
-
+  
+  console.log("Token from sessionStorage:", token); // Debug log
+  
   let headers = options.headers || {};
 
-  // Only add JSON headers if body is NOT FormData
   if (!(options.body instanceof FormData)) {
     headers = {
       "Content-Type": "application/json",
@@ -25,13 +26,8 @@ export async function apiFetch(path, options = {}) {
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
-
-  console.log(`Making request to: ${path}`, {
-    method: options.method || 'GET',
-    headers,
-    body: options.body
-  });
-
+  
+  console.log("Final headers being sent:", headers); // Debug log
   const res = await fetch(`${apiBase}${path}`, { ...options, headers });
 
   if (!res.ok) {
