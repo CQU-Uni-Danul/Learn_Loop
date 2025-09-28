@@ -23,7 +23,8 @@ def my_schedule(
     current: User = Depends(require_roles(["teacher", "admin"])),
     db: Session = Depends(get_db),
 ):
-    today_name = datetime.now().strftime("%A")
+    # today_name = datetime.now().strftime("%A")
+    today_name = 'Monday'  # For testing, fix to Monday
 
     rows = db.execute(
         text("""

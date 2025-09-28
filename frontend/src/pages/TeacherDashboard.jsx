@@ -61,19 +61,37 @@ export default function TeacherDashboard() {
     navigate("/");
   };
 
+
+
   const handleUpload = async (file) => {
-    if (!file) return;
-    const body = new FormData();
-    body.append("file", file);
-    await fetch(`${import.meta.env.VITE_API_BASE || "http://localhost:8000"}/teacher/materials/upload`, {
+  if (!file) return;
+
+  const body = new FormData();
+  body.append("file", file);
+
+  try {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE || "http://localhost:8000"}/teacher/materials/upload`, {
       method: "POST",
       headers: { Authorization: `Bearer ${sessionStorage.getItem("accessToken") || ""}` },
       body,
     });
-    const files = await api("/teacher/materials");
-    setMaterials(files ?? []);
-    alert("Uploaded!");
-  };
+
+    const data = await res.json();
+    if (data.ok) {
+      const files = await api("/teacher/materials");
+      setMaterials(files ?? []);
+      alert("Uploaded!");
+    } else {
+      alert("Upload failed");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Upload failed");
+  }
+};
+
+
+
 
   const sendMessage = async () => {
     if (!message) return;
