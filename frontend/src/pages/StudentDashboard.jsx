@@ -1,39 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../lib/api";
+import { listStudents } from "../lib/api";
 
-function DayCard({ day, items }) {
-  return (
-    <div className="stu-card overflow-hidden">
-      <div className="px-4 py-2.5 bg-emerald-50 text-[13px] font-semibold text-emerald-700">
-        {day}
-      </div>
-      <div>
-        {items.map((it, idx) => (
-          <div
-            key={idx}
-            className="stu-row flex items-center justify-between px-4 py-3 border-t first:border-t-0 border-slate-200"
-          >
-            <div className="text-[13px]">
-              <div className="font-medium text-slate-900">{it.subject}</div>
-              <div className="text-slate-500 text-xs">{it.teacher}</div>
-            </div>
-            <div className="stu-time">{it.start} – {it.end}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-export default function StudentDashboard() {
-  const nav = useNavigate();
-  const [me, setMe] = useState(null);
-  const [week, setWeek] = useState([]);
-  const [loading, setLoading] = useState(true);
+function StudentDashboard() {
+  const navigate = useNavigate();
+  const [students, setStudents] = useState([]);
 
   useEffect(() => {
-    const token = sessionStorage.getItem("accessToken");
     const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
     if (!token || !user) { nav("/"); return; }
     if (user.role !== "student") { nav("/"); return; }
