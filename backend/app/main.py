@@ -57,6 +57,17 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
 def me(current = Depends(get_current_user)):
     return {"id": current.user_id, "email": current.email, "name": current.full_name, "role": current.role}
 
+
+@app.get("/debug/current_user")
+def debug_user(current: User = Depends(get_current_user)):
+    return {
+        "id": current.user_id,
+        "email": current.email,
+        "full_name": current.full_name,
+        "role": current.role
+    }
+
+
 # Include routers with prefixes
 app.include_router(users_router.router, prefix="/api/users", tags=["users"])
 app.include_router(students.router,  prefix="/api/student",  tags=["students"])

@@ -1,11 +1,12 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from datetime import datetime 
+from fastapi import APIRouter, Depends, HTTPException, Query, status, File, UploadFile
+from datetime import datetime
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
-from sqlalchemy import text
-from fastapi import File, UploadFile
+from sqlalchemy import or_, text
 import shutil
+import os
+from pydantic import BaseModel
+from ..deps import get_current_user
 
 from ...db.session import get_db
 from ...db.models.teacher import Teacher
@@ -14,15 +15,11 @@ from ...schemas.teacher import TeacherCreate, TeacherOut, TeacherUpdate
 from ...core.security import hash_password
 from ..deps import require_roles
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-
-
-# backend/app/api/routers/teacher.py
 router = APIRouter(tags=["teacher"])
 
-
-
+# =====================
+# Helper functions
+# =====================
 def _to_out(t: Teacher) -> TeacherOut:
     return TeacherOut(
         id=t.teacher_id,
@@ -35,21 +32,18 @@ def _to_out(t: Teacher) -> TeacherOut:
         phone=t.phone,
     )
 
-
-
-
+# =====================
+# Teacher CRUD
+# =====================
 @router.post("/", response_model=TeacherOut, status_code=status.HTTP_201_CREATED)
 def create_teacher(
     payload: TeacherCreate,
     db: Session = Depends(get_db),
     _admin=Depends(require_roles(["admin"])),
 ):
-    """Create a new teacher and linked user account."""
     if db.query(User).filter(User.email == payload.email).first():
         raise HTTPException(status_code=409, detail="Email already in use")
-
     try:
-        # Create user for login
         u = User(
             email=payload.email,
             full_name=payload.full_name,
@@ -57,11 +51,10 @@ def create_teacher(
             password_hash=hash_password(payload.password),
         )
         db.add(u)
-        db.flush()  # ensures user_id is generated
+        db.flush()
 
-        # Create teacher profile
         t = Teacher(
-            teacher_id=u.user_id,  # link teacher_id with user_id for consistency
+            teacher_id=u.user_id,
             full_name=payload.full_name,
             email=payload.email,
             role="teacher",
@@ -74,7 +67,6 @@ def create_teacher(
         db.commit()
         db.refresh(t)
         return _to_out(t)
-
     except Exception as e:
         db.rollback()
         print("Error creating teacher:", e)
@@ -90,7 +82,6 @@ def list_teachers(
     db: Session = Depends(get_db),
     _admin=Depends(require_roles(["admin"])),
 ):
-    """List teachers with optional search and pagination."""
     qry = db.query(Teacher)
     if q:
         like = f"%{q}%"
@@ -120,21 +111,16 @@ def update_teacher(
     db: Session = Depends(get_db),
     _admin=Depends(require_roles(["admin"])),
 ):
-    """Update teacher profile and linked user account."""
     t = db.query(Teacher).filter(Teacher.teacher_id == teacher_id).first()
     if not t:
         raise HTTPException(status_code=404, detail="Teacher not found")
-
     u = db.query(User).filter(User.user_id == t.teacher_id).first()
     if not u:
-        raise HTTPException(
-            status_code=409, detail="Linked user not found for this teacher"
-        )
+        raise HTTPException(status_code=409, detail="Linked user not found")
 
     if payload.email and payload.email != t.email:
         if db.query(User).filter(User.email == payload.email).first():
             raise HTTPException(status_code=409, detail="Email already in use")
-
     try:
         if payload.full_name is not None:
             t.full_name = payload.full_name
@@ -152,11 +138,9 @@ def update_teacher(
             t.phone = payload.phone
         if payload.password:
             u.password_hash = hash_password(payload.password)
-
         db.commit()
         db.refresh(t)
         return _to_out(t)
-
     except Exception as e:
         db.rollback()
         print("Error updating teacher:", e)
@@ -169,25 +153,21 @@ def delete_teacher(
     db: Session = Depends(get_db),
     _admin=Depends(require_roles(["admin"])),
 ):
-    """Delete a teacher and linked user account."""
     t = db.query(Teacher).filter(Teacher.teacher_id == teacher_id).first()
     if not t:
         raise HTTPException(status_code=404, detail="Teacher not found")
-
     try:
-        # Delete linked user first
         u = db.query(User).filter(User.user_id == t.teacher_id).first()
         if u:
             db.delete(u)
-
         db.delete(t)
         db.commit()
         return
-
     except Exception as e:
         db.rollback()
         print("Error deleting teacher:", e)
         raise HTTPException(status_code=500, detail="Failed to delete teacher")
+
 
 # =====================
 # Teacher Schedule
@@ -197,12 +177,7 @@ def my_schedule(
     current: User = Depends(require_roles(["teacher", "admin"])),
     db: Session = Depends(get_db),
 ):
-    """Get today's schedule for the logged-in teacher."""
-    # Use current weekday (e.g., Monday, Tuesday...)
-    # today_name = datetime.now().strftime("%A")
-    # For testing, you can hardcode:
-    today_name = 'Monday'
-
+    today_name = datetime.now().strftime("%A")
     rows = db.execute(
         text("""
             SELECT 
@@ -227,31 +202,60 @@ def my_schedule(
         "schedule": list(rows),
     }
 
-
-# # Materials storage folder
-# MATERIALS_DIR = "teacher_materials"
-
-# @router.get("/materials")
-# def list_materials(current: User = Depends(require_roles(["teacher"]))):
-#     """List uploaded materials for the current teacher."""
-#     import os
-#     os.makedirs(MATERIALS_DIR, exist_ok=True)
-#     # Filter files by teacher ID
-#     teacher_files = [
-#         f for f in os.listdir(MATERIALS_DIR) if f.startswith(f"{current.user_id}_")
-#     ]
-#     return teacher_files
+# =====================
+# Notifications
+# =====================
 
 
-# @router.post("/materials/upload")
-# def upload_material(
-#     file: UploadFile = File(...),
-#     current: User = Depends(require_roles(["teacher"]))
-# ):
-#     """Upload a file for the current teacher."""
-#     import os
-#     os.makedirs(MATERIALS_DIR, exist_ok=True)
-#     file_path = os.path.join(MATERIALS_DIR, f"{current.user_id}_{file.filename}")
-#     with open(file_path, "wb") as buffer:
-#         shutil.copyfileobj(file.file, buffer)
-#     return {"ok": True, "filename": file.filename}
+class NotificationCreate(BaseModel):
+    content: str
+
+@router.post("/notifications/send")
+def send_notification(
+    payload: NotificationCreate,
+    current: User = Depends(get_current_user),  # only require authentication
+    db: Session = Depends(get_db),
+):
+    """Send a notification to all students"""
+    # Fetch all students
+    student_ids = [u.user_id for u in db.query(User).filter(User.role == "student").all()]
+
+    if not student_ids:
+        raise HTTPException(status_code=404, detail="No students found to send notifications")
+
+    # Insert notifications
+    for sid in student_ids:
+        db.execute(
+            text("""
+                INSERT INTO notifications (sent_to, message, sent_by)
+                VALUES (:sid, :msg, :tid)
+            """),
+            {"sid": sid, "msg": payload.content, "tid": current.user_id}
+        )
+    db.commit()
+
+    return {
+        "ok": True,
+        "sent_to": len(student_ids),
+        "message": "Notification sent to all students"
+    }
+# -----------------------------
+# List notifications sent by this teacher
+# -----------------------------
+@router.get("/notifications")
+def list_notifications(
+    current: User = Depends(get_current_user),  # remove require_roles temporarily
+    db: Session = Depends(get_db),
+):
+    rows = db.execute(
+        text("""
+            SELECT n.notification_id, n.sent_to, n.message, n.date_sent, n.is_read, u.full_name AS student_name
+            FROM notifications n
+            JOIN users u ON u.user_id = n.sent_to
+            WHERE n.sent_by = :tid
+            ORDER BY n.date_sent DESC
+            LIMIT 50
+        """),
+        {"tid": current.user_id}
+    ).mappings().all()
+    return {"notifications": list(rows)}

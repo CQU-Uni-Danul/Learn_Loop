@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiFetch } from "../lib/api"; // Ensure you have a helper to handle fetch requests
+import { apiFetch } from "../lib/api"; // Make sure this handles JWT headers
 
 /* small stat card */
 function Stat({ label, value }) {
@@ -33,8 +33,9 @@ export default function TeacherDashboard() {
   const [materials, setMaterials] = useState([]);
   const [message, setMessage] = useState('');
   const [notification, setNotification] = useState('');
+  const [notificationsList, setNotificationsList] = useState([]);
 
-  // Load profile, schedule, materials
+  // Load profile, schedule, materials, notifications
   useEffect(() => {
     const token = sessionStorage.getItem("accessToken");
     const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
@@ -51,9 +52,9 @@ export default function TeacherDashboard() {
         const sched = await apiFetch("/api/teacher/schedule/me");
         setToday(sched.schedule ?? []);
 
-
-        // const files = await apiFetch("/api/teacher/materials");
-        // setMaterials(files ?? []);
+        // Load notifications
+        // const notifs = await apiFetch("/api/teacher/notifications");
+        // setNotificationsList(notifs.notifications ?? []);
       } catch (err) {
         console.error(err);
         navigate("/");
@@ -115,6 +116,11 @@ export default function TeacherDashboard() {
         body: JSON.stringify({ content: notification }),
       });
       setNotification('');
+
+      // Refresh notifications after sending
+      const notifs = await apiFetch("/api/teacher/notifications");
+      setNotificationsList(notifs.notifications ?? []);
+
       alert("Notification sent!");
     } catch (err) {
       console.error(err);
@@ -222,7 +228,18 @@ export default function TeacherDashboard() {
             className="w-full p-2 border border-slate-300 rounded"
           />
           <button onClick={sendNotification} className="btn btn-tch">Send Notification</button>
-          <button onClick={() => navigate('/notifications')} className="btn btn-tch-outline">View Notifications</button>
+
+          {/* Display sent notifications */}
+          {notificationsList.length > 0 && (
+            <ul className="list-disc pl-5 text-sm text-slate-700 space-y-1 mt-3">
+              {notificationsList.map((n) => (
+                <li key={n.notification_id}>
+                  <strong>To:</strong> {n.student_name} | <strong>Message:</strong> {n.message} | <strong>Date:</strong> {new Date(n.date_sent).toLocaleString()}
+                </li>
+              ))}
+            </ul>
+          )}
+          <button onClick={() => navigate('/notifications')} className="btn btn-tch-outline">View All Notifications</button>
         </div>
 
         {/* Quick actions */}

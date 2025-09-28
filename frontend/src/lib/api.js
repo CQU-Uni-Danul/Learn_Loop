@@ -141,9 +141,14 @@ export async function sendMessage(content) {
   });
 }
 
+/* ---------- NOTIFICATIONS ---------- */
 export async function sendNotification(content) {
   return apiFetch("/api/teacher/notifications/send", {
     method: "POST",
     body: JSON.stringify({ content }),
   });
+}
+
+export async function listNotifications() {
+  return apiFetch("/api/teacher/notifications");
 }

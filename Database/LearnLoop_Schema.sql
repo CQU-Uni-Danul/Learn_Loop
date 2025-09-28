@@ -238,6 +238,16 @@ SELECT * FROM notifications;
 SELECT * FROM messages;
 
 
+-- ALTER TABLE notifications ADD COLUMN sent_by INT UNSIGNED NULL;
+
+-- ALTER TABLE notifications
+-- ADD CONSTRAINT fk_notifications_sent_by
+-- FOREIGN KEY (sent_by) REFERENCES users(user_id)
+-- ON DELETE SET NULL
+-- ON UPDATE CASCADE;
+
+-- DESCRIBE notifications;
+
 
 
 
