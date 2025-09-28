@@ -53,10 +53,7 @@ export default function TeacherDashboard() {
       const sched = await apiFetch("/api/teacher/schedule/me");
       setToday(sched.schedule ?? []);
 
-      // 👇 UNCOMMENT AND FIX THIS
-      const notifs = await apiFetch("/api/teacher/notifications");
-      console.log("Loaded notifications:", notifs); // Debug log
-      setNotificationsList(notifs.notifications ?? []);
+      
     } catch (err) {
       console.error(err);
       navigate("/");
@@ -121,9 +118,7 @@ const sendNotification = async () => {
 
     setNotification('');
 
-    // // 👇 UNCOMMENT AND FIX THIS
-    // const notifs = await apiFetch("/api/teacher/notifications");
-    // setNotificationsList(notifs.notifications ?? []);
+  
 
     alert("Notification sent!");
   } catch (err) {
