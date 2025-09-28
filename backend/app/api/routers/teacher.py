@@ -232,25 +232,25 @@ def send_notification(
 # -----------------------------
 # List notifications sent by this teacher
 # -----------------------------
-@router.get("/notifications")
-def list_notifications(
-    current: User = Depends(require_roles(["teacher", "admin", "student"])),
-    db: Session = Depends(get_db),
-):
-    print(f"🔥 NOTIFICATIONS ENDPOINT HIT!")  # This should print if endpoint is reached
-    print(f"DEBUG: Successfully authenticated user {current.user_id} with role {current.role}")
+# @router.get("/notifications")
+# def list_notifications(
+#     current: User = Depends(require_roles(["teacher", "admin"])),
+#     db: Session = Depends(get_db),
+# ):
+#     print(f"🔥 NOTIFICATIONS ENDPOINT HIT!")  # This should print if endpoint is reached
+#     print(f"DEBUG: Successfully authenticated user {current.user_id} with role {current.role}")
     
-    rows = db.execute(
-        text("""
-            SELECT n.notification_id, n.sent_to, n.message, n.date_sent, n.is_read, u.full_name AS student_name
-            FROM notifications n
-            JOIN users u ON u.user_id = n.sent_to
-            WHERE n.sent_by = :tid
-            ORDER BY n.date_sent DESC
-            LIMIT 50
-        """),
-        {"tid": current.user_id}
-    ).mappings().all()
+#     rows = db.execute(
+#         text("""
+#             SELECT n.notification_id, n.sent_to, n.message, n.date_sent, n.is_read, u.full_name AS student_name
+#             FROM notifications n
+#             JOIN users u ON u.user_id = n.sent_to
+#             WHERE n.sent_by = :tid
+#             ORDER BY n.date_sent DESC
+#             LIMIT 50
+#         """),
+#         {"tid": current.user_id}
+#     ).mappings().all()
     
-    print(f"DEBUG: Found {len(rows)} notifications")
-    return {"notifications": list(rows)}
+#     print(f"DEBUG: Found {len(rows)} notifications")
+#     return {"notifications": list(rows)}

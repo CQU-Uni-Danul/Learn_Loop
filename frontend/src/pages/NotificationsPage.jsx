@@ -21,12 +21,12 @@ export default function NotificationsPage() {
         const profile = await apiFetch("/api/auth/me");
         setMe(profile);
 
-        const notifs = await apiFetch("/api/teacher/notifications");
-        console.log("Raw notifications response:", notifs);
-        console.log("Notifications array:", notifs.notifications);
-        console.log("Number of notifications:", notifs.notifications?.length);
+        // const notifs = await apiFetch("/api/teacher/notifications");
+        // console.log("Raw notifications response:", notifs);
+        // console.log("Notifications array:", notifs.notifications);
+        // console.log("Number of notifications:", notifs.notifications?.length);
         
-        setNotifications(notifs.notifications ?? []);
+        // setNotifications(notifs.notifications ?? []);
       } catch (err) {
         console.error(err);
         navigate("/");
@@ -44,8 +44,8 @@ export default function NotificationsPage() {
 
   const refreshNotifications = async () => {
     try {
-      const notifs = await apiFetch("/api/teacher/notifications");
-      setNotifications(notifs.notifications ?? []);
+    //   const notifs = await apiFetch("/api/teacher/notifications");
+    //   setNotifications(notifs.notifications ?? []);
     } catch (err) {
       console.error('Failed to refresh:', err);
     }
@@ -58,10 +58,10 @@ export default function NotificationsPage() {
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button 
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/teacher')}
               className="text-slate-600 hover:text-slate-800"
             >
-              ← Back to Dashboard
+              ← Back 
             </button>
             <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow">
               🔔

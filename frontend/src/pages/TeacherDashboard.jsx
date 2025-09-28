@@ -243,16 +243,7 @@ const sendNotification = async () => {
           <button onClick={sendNotification} className="btn btn-tch">Send Notification</button>
           
 
-          {/* Display sent notifications */}
-          {notificationsList.length > 0 && (
-            <ul className="list-disc pl-5 text-sm text-slate-700 space-y-1 mt-3">
-              {notificationsList.map((n) => (
-                <li key={n.notification_id}>
-                  <strong>To:</strong> {n.student_name} | <strong>Message:</strong> {n.message} | <strong>Date:</strong> {new Date(n.date_sent).toLocaleString()}
-                </li>
-              ))}
-            </ul>
-          )}
+          
           <button onClick={() => navigate('/notifications')} className="btn btn-tch-outline">View All Notifications</button>
         </div>
 
