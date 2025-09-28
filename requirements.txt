@@ -29,7 +29,7 @@ python-multipart==0.0.9
 #
 # 3) Start backend server (from project root):
 #    
-#python -m uvicorn backend.app.main:app --reload --env-file backend/.env
+#    python -m uvicorn backend.app.main:app --reload --env-file backend/.env
 # 4) Start frontend (from frontend/ folder):
 #    npm install
 #    npm run dev

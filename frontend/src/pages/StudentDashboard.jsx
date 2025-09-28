@@ -1,44 +1,67 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { listStudents } from "../lib/api";
+import { apiFetch, listStudents } from "../lib/api";
+
+
+function DayCard({ day, items }) {
+  return (
+    <div className="stu-card p-4">
+      <div className="text-sm font-semibold mb-2">{day}</div>
+      {items && items.length > 0 ? (
+        items.map((cls, i) => (
+          <div key={i} className="text-xs text-slate-700">
+            {cls.start} – {cls.end}: {cls.subject} ({cls.teacher})
+          </div>
+        ))
+      ) : (
+        <div className="text-xs text-slate-400">No classes</div>
+      )}
+    </div>
+  );
+}
 
 function StudentDashboard() {
   const navigate = useNavigate();
-  const [students, setStudents] = useState([]);
+  const [me, setMe] = useState(null);
+  const [week, setWeek] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
-    if (!token || !user) { nav("/"); return; }
-    if (user.role !== "student") { nav("/"); return; }
+    const token = sessionStorage.getItem("accessToken");
+
+    if (!token || !user) {
+      navigate("/");
+      return;
+    }
+    if (user.role !== "student") {
+      navigate("/");
+      return;
+    }
 
     (async () => {
       try {
-        const profile = await api("/api/auth/me");
+        const profile = await apiFetch("/api/auth/me");
         setMe(profile);
-        // const timetable = await api(`/timetable/${profile.id}`);
-        // console.log(timetable.week);
-        // setWeek(timetable.week ?? []);
 
-        const timetable = await api(`/student/timetable/${profile.id}`);
-        console.log(timetable.week);
+        const timetable = await apiFetch(`/api/student/timetable/${profile.id}`);
         setWeek(timetable.week ?? []);
-
-      } catch {
-        nav("/");
+      } catch (err) {
+        console.error(err);
+        navigate("/");
       } finally {
         setLoading(false);
       }
     })();
-  }, [nav]);
+  }, [navigate]);
 
   const logout = () => {
     sessionStorage.removeItem("accessToken");
     sessionStorage.removeItem("currentUser");
-    nav("/");
+    navigate("/");
   };
 
-  const nextClass =
-    week?.find(d => d.items?.length)?.items?.[0] || null;
+  const nextClass = week?.find((d) => d.items?.length)?.items?.[0] || null;
 
   return (
     <div className="min-h-dvh bg-gradient-to-b from-emerald-50 to-emerald-100/50">
@@ -50,7 +73,9 @@ function StudentDashboard() {
               🎒
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-slate-800">LearnLoop • Student</h1>
+              <h1 className="text-lg font-semibold text-slate-800">
+                LearnLoop • Student
+              </h1>
               <p className="text-[11px] text-slate-500">My classes & schedule</p>
             </div>
           </div>
@@ -110,11 +135,17 @@ function StudentDashboard() {
                 ⏰
               </div>
               <div>
-                <div className="text-sm font-medium text-slate-800">Next up: {nextClass.subject}</div>
-                <div className="text-xs text-slate-500">with {nextClass.teacher}</div>
+                <div className="text-sm font-medium text-slate-800">
+                  Next up: {nextClass.subject}
+                </div>
+                <div className="text-xs text-slate-500">
+                  with {nextClass.teacher}
+                </div>
               </div>
             </div>
-            <div className="stu-time">{nextClass.start} – {nextClass.end}</div>
+            <div className="stu-time">
+              {nextClass.start} – {nextClass.end}
+            </div>
           </div>
         )}
 
@@ -125,7 +156,6 @@ function StudentDashboard() {
           <div className="stu-card p-4 text-sm text-slate-500">No classes found.</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-            
             {week.map((d) => (
               <DayCard key={d.day} day={d.day} items={d.items} />
             ))}
@@ -148,3 +178,5 @@ function StudentDashboard() {
     </div>
   );
 }
+
+export default StudentDashboard;

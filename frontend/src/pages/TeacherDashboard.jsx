@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { listTeachers  } from "../lib/api";
+import { apiFetch } from "../lib/api"; // Ensure you have a helper to handle fetch requests
 
 /* small stat card */
 function Stat({ label, value }) {
@@ -34,20 +34,28 @@ export default function TeacherDashboard() {
   const [message, setMessage] = useState('');
   const [notification, setNotification] = useState('');
 
+  // Load profile, schedule, materials
   useEffect(() => {
     const token = sessionStorage.getItem("accessToken");
     const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
-    if (!token || !user || user.role !== "teacher") { navigate("/"); return; }
+    if (!token || !user || user.role !== "teacher") {
+      navigate("/");
+      return;
+    }
 
     (async () => {
       try {
-        const profile = await api("/api/auth/me");
+        const profile = await apiFetch("/api/auth/me");
         setMe(profile);
-        const sched = await api("/teacher/schedule/me");
-        setToday(sched.today ?? []);
-        const files = await api("/teacher/materials");
-        setMaterials(files ?? []);
-      } catch {
+
+        const sched = await apiFetch("/api/teacher/schedule/me");
+        setToday(sched.schedule ?? []);
+
+
+        // const files = await apiFetch("/api/teacher/materials");
+        // setMaterials(files ?? []);
+      } catch (err) {
+        console.error(err);
         navigate("/");
       } finally {
         setLoading(false);
@@ -61,50 +69,57 @@ export default function TeacherDashboard() {
     navigate("/");
   };
 
-
-
   const handleUpload = async (file) => {
-  if (!file) return;
+    if (!file) return;
+    const body = new FormData();
+    body.append("file", file);
 
-  const body = new FormData();
-  body.append("file", file);
-
-  try {
-    const res = await fetch(`${import.meta.env.VITE_API_BASE || "http://localhost:8000"}/teacher/materials/upload`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${sessionStorage.getItem("accessToken") || ""}` },
-      body,
-    });
-
-    const data = await res.json();
-    if (data.ok) {
-      const files = await api("/teacher/materials");
-      setMaterials(files ?? []);
-      alert("Uploaded!");
-    } else {
+    try {
+      const data = await apiFetch("/api/teacher/materials/upload", {
+        method: "POST",
+        body,
+      });
+      if (data?.ok) {
+        const files = await apiFetch("/api/teacher/materials");
+        setMaterials(files ?? []);
+        alert("Uploaded!");
+      } else {
+        alert("Upload failed");
+      }
+    } catch (err) {
+      console.error(err);
       alert("Upload failed");
     }
-  } catch (err) {
-    console.error(err);
-    alert("Upload failed");
-  }
-};
-
-
-
+  };
 
   const sendMessage = async () => {
     if (!message) return;
-    await api("/teacher/messages/send", { method: "POST", body: JSON.stringify({ content: message }) });
-    setMessage('');
-    alert("Message sent!");
+    try {
+      await apiFetch("/api/teacher/messages/send", {
+        method: "POST",
+        body: JSON.stringify({ content: message }),
+      });
+      setMessage('');
+      alert("Message sent!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to send message");
+    }
   };
 
   const sendNotification = async () => {
     if (!notification) return;
-    await api("/teacher/notifications/send", { method: "POST", body: JSON.stringify({ content: notification }) });
-    setNotification('');
-    alert("Notification sent!");
+    try {
+      await apiFetch("/api/teacher/notifications/send", {
+        method: "POST",
+        body: JSON.stringify({ content: notification }),
+      });
+      setNotification('');
+      alert("Notification sent!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to send notification");
+    }
   };
 
   return (
@@ -135,7 +150,6 @@ export default function TeacherDashboard() {
         </div>
       </header>
 
-      {/* amber top line */}
       <div className="topline-tch" />
 
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-5">
@@ -163,27 +177,14 @@ export default function TeacherDashboard() {
           <button onClick={() => navigate('/timetable')} className="btn btn-tch-outline m-4">Edit Timetable</button>
         </div>
 
-        {/* Teaching materials */}
+        {/* Materials */}
         <div className="tch-card p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="tch-chip">📚 Materials</div>
-            <button
-              onClick={async () => {
-                const files = await api("/teacher/materials");
-                setMaterials(files ?? []);
-              }}
-              className="btn btn-tch-outline"
-            >
-              Refresh
-            </button>
+            <button onClick={async () => setMaterials(await apiFetch("/api/teacher/materials") ?? [])} className="btn btn-tch-outline">Refresh</button>
           </div>
 
-          <form
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) handleUpload(f);
-            }}
-          >
+          <form onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f); }}>
             <label className="block w-full cursor-pointer">
               <span className="btn btn-tch inline-block">Upload Material</span>
               <input type="file" className="hidden" />
@@ -194,9 +195,7 @@ export default function TeacherDashboard() {
             <ul className="list-disc pl-5 text-sm text-slate-700 space-y-1">
               {materials.map((m) => <li key={m}>{m}</li>)}
             </ul>
-          ) : (
-            <p className="text-xs text-slate-500">No materials uploaded yet.</p>
-          )}
+          ) : <p className="text-xs text-slate-500">No materials uploaded yet.</p>}
           <button onClick={() => navigate('/materials')} className="btn btn-tch-outline">View All Materials</button>
         </div>
 
