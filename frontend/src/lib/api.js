@@ -3,18 +3,26 @@ const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:8000";
 
 /**
  * apiFetch
- * - Adds JSON headers
+ * - Adds JSON headers if body is not FormData
  * - Attaches Bearer token from sessionStorage
  * - Throws Error with readable message on non-2xx
  */
 export async function apiFetch(path, options = {}) {
   const token = sessionStorage.getItem("accessToken");
 
-  const headers = {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...(options.headers || {}),
-  };
+  let headers = options.headers || {};
+
+  // Only add JSON headers if body is NOT FormData
+  if (!(options.body instanceof FormData)) {
+    headers = {
+      "Content-Type": "application/json",
+      ...headers,
+    };
+  }
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
 
   const res = await fetch(`${apiBase}${path}`, { ...options, headers });
 
@@ -33,7 +41,7 @@ export async function apiFetch(path, options = {}) {
   return res.json();
 }
 
-/* ---------- USERS (read-only for dashboard list) ---------- */
+/* ---------- USERS (read-only) ---------- */
 export async function listUsers({ role, skip = 0, limit = 200 } = {}) {
   const params = new URLSearchParams();
   if (role) params.set("role", role);
@@ -42,12 +50,8 @@ export async function listUsers({ role, skip = 0, limit = 200 } = {}) {
   return apiFetch(`/api/users/?${params.toString()}`);
 }
 
-/* ---------------------------
-   Students (CRUD)
-   NOTE: collection endpoints use trailing slash (avoid 307 redirect)
----------------------------- */
+/* ---------- STUDENTS (CRUD) ---------- */
 export async function createStudent(payload) {
-  // payload: { full_name, email, password, grade?, class: "A" }
   return apiFetch("/api/students/", {
     method: "POST",
     body: JSON.stringify(payload),
@@ -79,11 +83,7 @@ export async function deleteStudent(id) {
   return apiFetch(`/api/students/${id}`, { method: "DELETE" });
 }
 
-/* ---------------------------
-   Teachers (CRUD) — added
-   Uses /api/teacher prefix (as in your main.py include)
-   NOTE: collection endpoints use trailing slash
----------------------------- */
+/* ---------- TEACHERS (CRUD) ---------- */
 export async function listTeachers({ q, subject, skip = 0, limit = 50 } = {}) {
   const params = new URLSearchParams();
   if (q) params.set("q", q);
@@ -113,4 +113,37 @@ export async function updateTeacher(id, patch) {
 
 export async function deleteTeacher(id) {
   return apiFetch(`/api/teacher/${id}`, { method: "DELETE" });
+}
+
+/* ---------- TEACHER DASHBOARD ENDPOINTS ---------- */
+export async function getProfile() {
+  return apiFetch("/api/auth/me");
+}
+
+export async function getTodaySchedule() {
+  return apiFetch("/api/teacher/schedule/me");
+}
+
+export async function getMaterials() {
+  return apiFetch("/api/teacher/materials");
+}
+
+export async function uploadMaterial(file) {
+  const body = new FormData();
+  body.append("file", file);
+  return apiFetch("/api/teacher/materials/upload", { method: "POST", body });
+}
+
+export async function sendMessage(content) {
+  return apiFetch("/api/teacher/messages/send", {
+    method: "POST",
+    body: JSON.stringify({ content }),
+  });
+}
+
+export async function sendNotification(content) {
+  return apiFetch("/api/teacher/notifications/send", {
+    method: "POST",
+    body: JSON.stringify({ content }),
+  });
 }

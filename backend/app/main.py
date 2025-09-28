@@ -59,6 +59,6 @@ def me(current = Depends(get_current_user)):
 
 # Include routers with prefixes
 app.include_router(users_router.router, prefix="/api/users", tags=["users"])
-app.include_router(students.router,  prefix="/api/students",  tags=["students"])
+app.include_router(students.router,  prefix="/api/student",  tags=["students"])
 app.include_router(timetable.router, prefix="/api/timetable", tags=["timetable"])
 app.include_router(teacher.router,   prefix="/api/teacher",   tags=["teacher"])

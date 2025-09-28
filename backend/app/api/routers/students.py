@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from ...api.deps import get_current_user, require_roles, get_db
 from ...db.models.user import User
 
-router = APIRouter(prefix="/student", tags=["student"])
+router = APIRouter(tags=["student"]) 
 
 
 @router.get("/schedule/me")
