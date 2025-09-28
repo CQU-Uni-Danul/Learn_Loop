@@ -109,7 +109,9 @@ function StudentDashboard() {
         <div className="stu-card p-4 text-sm text-slate-500 max-w-6xl mx-auto mt-6">Loading…!</div>
       ) : (
         <main className="max-w-6xl mx-auto px-4 py-6 space-y-5">
-          {/* Next Class */}
+
+
+          {/* Next Class
           {nextClass && (
             <div className="stu-card p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl shadow-lg">
               <div className="flex items-center justify-between">
@@ -125,10 +127,45 @@ function StudentDashboard() {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
+
+
+        {/* Next Class Card */}
+{nextClass && (
+  <div className="stu-card p-6 md:p-8 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6 shadow-lg">
+    
+    {/* Icon */}
+    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg md:text-xl font-bold">
+      ⏰
+    </div>
+
+    {/* Class Info */}
+    <div className="flex-1">
+      <h3 className="text-sm md:text-base text-blue-700">
+        Next Class
+      </h3>
+      <p className="text-base md:text-lg font-semibold text-blue-900">
+        {nextClass.subject} with {nextClass.teacher}
+      </p>
+      
+    </div>
+
+    {/* Room */}
+    <div className="ml-auto text-right text-sm md:text-base">
+      <div className="text-blue-600 font-medium">Room 204</div>
+      <div className="stu-time">{nextClass.start} – {nextClass.end}</div>
+    </div>
+  </div>
+)}
+
+
+
+
+
 
           {/* Weekly Timetable */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+           {/* Timetable Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {week.map((d) => (
               <DayCard key={d.day} day={d.day} items={d.items} />
             ))}
