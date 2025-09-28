@@ -3,6 +3,9 @@ import TeacherDashboard from './pages/TeacherDashboard';
 import StudentDashboard from './pages/StudentDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import LoginDashboard from './pages/Login';
+import NotificationsPage from './pages/NotificationsPage';
+
+
 
 
 function App() {
@@ -13,6 +16,7 @@ function App() {
         <Route path="/student/" element={<StudentDashboard />} />
         <Route path="/admin/" element={<AdminDashboard />} />
         <Route path="/" element={<LoginDashboard />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
       </Routes>
     </Router>
   );

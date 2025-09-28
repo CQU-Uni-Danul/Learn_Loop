@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiFetch } from "../lib/api"; // Ensure you have a helper to handle fetch requests
+import { apiFetch } from "../lib/api"; // Make sure this handles JWT headers
 
 /* small stat card */
 function Stat({ label, value }) {
@@ -33,35 +33,35 @@ export default function TeacherDashboard() {
   const [materials, setMaterials] = useState([]);
   const [message, setMessage] = useState('');
   const [notification, setNotification] = useState('');
+  const [notificationsList, setNotificationsList] = useState([]);
+  
 
-  // Load profile, schedule, materials
+  // Load profile, schedule, materials, notifications
   useEffect(() => {
-    const token = sessionStorage.getItem("accessToken");
-    const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
-    if (!token || !user || user.role !== "teacher") {
+  const token = sessionStorage.getItem("accessToken");
+  const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
+  if (!token || !user || user.role !== "teacher") {
+    navigate("/");
+    return;
+  }
+
+  (async () => {
+    try {
+      const profile = await apiFetch("/api/auth/me");
+      setMe(profile);
+
+      const sched = await apiFetch("/api/teacher/schedule/me");
+      setToday(sched.schedule ?? []);
+
+      
+    } catch (err) {
+      console.error(err);
       navigate("/");
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    (async () => {
-      try {
-        const profile = await apiFetch("/api/auth/me");
-        setMe(profile);
-
-        const sched = await apiFetch("/api/teacher/schedule/me");
-        setToday(sched.schedule ?? []);
-
-
-        // const files = await apiFetch("/api/teacher/materials");
-        // setMaterials(files ?? []);
-      } catch (err) {
-        console.error(err);
-        navigate("/");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [navigate]);
+  })();
+}, [navigate]);
 
   const logout = () => {
     sessionStorage.removeItem("accessToken");
@@ -107,20 +107,27 @@ export default function TeacherDashboard() {
     }
   };
 
-  const sendNotification = async () => {
-    if (!notification) return;
-    try {
-      await apiFetch("/api/teacher/notifications/send", {
-        method: "POST",
-        body: JSON.stringify({ content: notification }),
-      });
-      setNotification('');
-      alert("Notification sent!");
-    } catch (err) {
-      console.error(err);
-      alert("Failed to send notification");
-    }
-  };
+const sendNotification = async () => {
+  if (!notification) return;
+
+  try {
+    await apiFetch("/api/teacher/notifications/send", {
+      method: "POST",
+      body: JSON.stringify({ content: notification }),
+    });
+
+    setNotification('');
+
+  
+
+    alert("Notification sent!");
+  } catch (err) {
+    console.error('Notification send error:', err);
+    alert(`Failed to send notification: ${err.message}`);
+  }
+};
+
+
 
   return (
     <div className="min-h-dvh tch-bg">
@@ -220,9 +227,19 @@ export default function TeacherDashboard() {
             onChange={(e) => setNotification(e.target.value)}
             placeholder="Notify students about assignments or events"
             className="w-full p-2 border border-slate-300 rounded"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault(); // prevent newline
+                sendNotification();
+              }
+            }}
           />
+
           <button onClick={sendNotification} className="btn btn-tch">Send Notification</button>
-          <button onClick={() => navigate('/notifications')} className="btn btn-tch-outline">View Notifications</button>
+          
+
+          
+          <button onClick={() => navigate('/notifications')} className="btn btn-tch-outline">View All Notifications</button>
         </div>
 
         {/* Quick actions */}

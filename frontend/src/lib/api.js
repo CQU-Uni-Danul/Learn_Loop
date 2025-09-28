@@ -7,12 +7,15 @@ const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:8000";
  * - Attaches Bearer token from sessionStorage
  * - Throws Error with readable message on non-2xx
  */
+
+// Updated apiFetch function with better error logging
 export async function apiFetch(path, options = {}) {
   const token = sessionStorage.getItem("accessToken");
-
+  
+  console.log("Token from sessionStorage:", token); // Debug log
+  
   let headers = options.headers || {};
 
-  // Only add JSON headers if body is NOT FormData
   if (!(options.body instanceof FormData)) {
     headers = {
       "Content-Type": "application/json",
@@ -23,17 +26,36 @@ export async function apiFetch(path, options = {}) {
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
-
+  
+  console.log("Final headers being sent:", headers); // Debug log
   const res = await fetch(`${apiBase}${path}`, { ...options, headers });
 
   if (!res.ok) {
     let message = `API error (${res.status})`;
+    let errorData = null;
+    
     try {
-      const data = await res.json();
-      if (data?.detail) message = data.detail;
-      else if (typeof data === "string") message = data;
-      else message = JSON.stringify(data);
-    } catch { /* ignore */ }
+      errorData = await res.json();
+      console.error(`API Error ${res.status} for ${path}:`, errorData);
+      
+      if (errorData?.detail) {
+        if (Array.isArray(errorData.detail)) {
+          message = errorData.detail.map(e => `${e.loc?.join('.')}: ${e.msg}`).join(', ');
+        } else if (typeof errorData.detail === 'object') {
+          message = JSON.stringify(errorData.detail);
+        } else {
+          message = errorData.detail;
+        }
+      } else if (typeof errorData === "string") {
+        message = errorData;
+      } else {
+        message = JSON.stringify(errorData);
+      }
+    } catch (jsonError) {
+      console.error('Could not parse error response as JSON:', jsonError);
+      message = `${res.status} ${res.statusText}`;
+    }
+    
     throw new Error(message);
   }
 
@@ -141,9 +163,14 @@ export async function sendMessage(content) {
   });
 }
 
+/* ---------- NOTIFICATIONS ---------- */
 export async function sendNotification(content) {
   return apiFetch("/api/teacher/notifications/send", {
     method: "POST",
     body: JSON.stringify({ content }),
   });
+}
+
+export async function listNotifications() {
+  return apiFetch("/api/teacher/notifications");
 }
