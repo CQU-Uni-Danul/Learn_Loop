@@ -34,6 +34,7 @@ export default function TeacherDashboard() {
   const [message, setMessage] = useState('');
   const [notification, setNotification] = useState('');
   const [notificationsList, setNotificationsList] = useState([]);
+  
 
   // Load profile, schedule, materials, notifications
   useEffect(() => {
@@ -108,25 +109,45 @@ export default function TeacherDashboard() {
     }
   };
 
-  const sendNotification = async () => {
-    if (!notification) return;
+ // Updated sendNotification function with better error handling
+const sendNotification = async () => {
+  if (!notification) return;
+
+  try {
+    console.log('Sending notification with content:', notification);
+    console.log('Current user from session:', JSON.parse(sessionStorage.getItem("currentUser") || "{}"));
+    console.log('Token exists:', !!sessionStorage.getItem("accessToken"));
+    console.log('Token value:', sessionStorage.getItem("accessToken")?.substring(0, 20) + '...');
+    
+    // First, test if we can access our profile (this should work)
     try {
-      await apiFetch("/api/teacher/notifications/send", {
-        method: "POST",
-        body: JSON.stringify({ content: notification }),
-      });
-      setNotification('');
-
-      // Refresh notifications after sending
-      const notifs = await apiFetch("/api/teacher/notifications");
-      setNotificationsList(notifs.notifications ?? []);
-
-      alert("Notification sent!");
-    } catch (err) {
-      console.error(err);
-      alert("Failed to send notification");
+      const profile = await apiFetch("/api/auth/me");
+      console.log('Profile fetch successful:', profile);
+    } catch (profileError) {
+      console.error('Profile fetch failed:', profileError);
+      alert('Authentication issue detected. Please log in again.');
+      return;
     }
-  };
+    
+    await apiFetch("/api/teacher/notifications/send", {
+      method: "POST",
+      body: JSON.stringify({ content: notification }),
+    });
+
+    setNotification('');
+
+    // // Refresh notifications list
+    // const notifs = await apiFetch("/api/teacher/notifications");
+    // setNotificationsList(notifs.notifications ?? []);
+
+    alert("Notification sent!");
+  } catch (err) {
+    console.error('Notification send error:', err);
+    alert(`Failed to send notification: ${err.message}`);
+  }
+};
+
+
 
   return (
     <div className="min-h-dvh tch-bg">
@@ -226,7 +247,14 @@ export default function TeacherDashboard() {
             onChange={(e) => setNotification(e.target.value)}
             placeholder="Notify students about assignments or events"
             className="w-full p-2 border border-slate-300 rounded"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault(); // prevent newline
+                sendNotification();
+              }
+            }}
           />
+
           <button onClick={sendNotification} className="btn btn-tch">Send Notification</button>
 
           {/* Display sent notifications */}

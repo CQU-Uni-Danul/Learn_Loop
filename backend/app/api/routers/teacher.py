@@ -205,25 +205,18 @@ def my_schedule(
 # =====================
 # Notifications
 # =====================
-
-
 class NotificationCreate(BaseModel):
     content: str
 
 @router.post("/notifications/send")
 def send_notification(
     payload: NotificationCreate,
-    current: User = Depends(get_current_user),  # only require authentication
+    current: User = Depends(require_roles(["teacher", "admin"])),
     db: Session = Depends(get_db),
 ):
-    """Send a notification to all students"""
-    # Fetch all students
-    student_ids = [u.user_id for u in db.query(User).filter(User.role == "student").all()]
-
+    student_ids = [u.user_id for u in db.query(User).filter(User.role=="student").all()]
     if not student_ids:
-        raise HTTPException(status_code=404, detail="No students found to send notifications")
-
-    # Insert notifications
+        raise HTTPException(status_code=404, detail="No students found")
     for sid in student_ids:
         db.execute(
             text("""
@@ -233,18 +226,15 @@ def send_notification(
             {"sid": sid, "msg": payload.content, "tid": current.user_id}
         )
     db.commit()
+    return {"ok": True, "sent_to": len(student_ids), "message": "Notification sent"}
 
-    return {
-        "ok": True,
-        "sent_to": len(student_ids),
-        "message": "Notification sent to all students"
-    }
+
 # -----------------------------
 # List notifications sent by this teacher
 # -----------------------------
 @router.get("/notifications")
 def list_notifications(
-    current: User = Depends(get_current_user),  # remove require_roles temporarily
+    current: User = Depends(require_roles(["teacher", "admin"])),
     db: Session = Depends(get_db),
 ):
     rows = db.execute(

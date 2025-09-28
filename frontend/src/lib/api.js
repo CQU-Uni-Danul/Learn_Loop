@@ -7,6 +7,8 @@ const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:8000";
  * - Attaches Bearer token from sessionStorage
  * - Throws Error with readable message on non-2xx
  */
+
+// Updated apiFetch function with better error logging
 export async function apiFetch(path, options = {}) {
   const token = sessionStorage.getItem("accessToken");
 
@@ -24,16 +26,40 @@ export async function apiFetch(path, options = {}) {
     headers.Authorization = `Bearer ${token}`;
   }
 
+  console.log(`Making request to: ${path}`, {
+    method: options.method || 'GET',
+    headers,
+    body: options.body
+  });
+
   const res = await fetch(`${apiBase}${path}`, { ...options, headers });
 
   if (!res.ok) {
     let message = `API error (${res.status})`;
+    let errorData = null;
+    
     try {
-      const data = await res.json();
-      if (data?.detail) message = data.detail;
-      else if (typeof data === "string") message = data;
-      else message = JSON.stringify(data);
-    } catch { /* ignore */ }
+      errorData = await res.json();
+      console.error(`API Error ${res.status} for ${path}:`, errorData);
+      
+      if (errorData?.detail) {
+        if (Array.isArray(errorData.detail)) {
+          message = errorData.detail.map(e => `${e.loc?.join('.')}: ${e.msg}`).join(', ');
+        } else if (typeof errorData.detail === 'object') {
+          message = JSON.stringify(errorData.detail);
+        } else {
+          message = errorData.detail;
+        }
+      } else if (typeof errorData === "string") {
+        message = errorData;
+      } else {
+        message = JSON.stringify(errorData);
+      }
+    } catch (jsonError) {
+      console.error('Could not parse error response as JSON:', jsonError);
+      message = `${res.status} ${res.statusText}`;
+    }
+    
     throw new Error(message);
   }
 
