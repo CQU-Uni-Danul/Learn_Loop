@@ -226,6 +226,8 @@ WHERE s.user_id = (SELECT user_id FROM users WHERE email='alice@student.edu');
 -- =========================================================
 -- Quick sanity check
 -- =========================================================
+
+USE school_mgmt;
 SELECT * FROM users;
 SELECT * FROM students;
 SELECT * FROM classes;
@@ -234,3 +236,5 @@ SELECT * FROM timetables;
 SELECT * FROM materials;
 SELECT * FROM notifications;
 SELECT * FROM messages;
+
+
