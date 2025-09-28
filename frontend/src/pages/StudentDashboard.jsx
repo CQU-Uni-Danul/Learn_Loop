@@ -2,14 +2,20 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 
+// Single day card component for timetable
 function DayCard({ day, items }) {
   return (
     <div className="stu-card p-4">
       <div className="text-sm font-semibold mb-2 text-slate-800">{day}</div>
       {items && items.length > 0 ? (
         items.map((cls, i) => (
-          <div key={i} className="text-xs text-slate-700 p-2 rounded border-l-2 border-emerald-400 mb-2 bg-emerald-50">
-            <div className="font-medium">{cls.start} – {cls.end}</div>
+          <div
+            key={i}
+            className="text-xs text-slate-700 p-2 rounded border-l-2 border-emerald-400 mb-2 bg-emerald-50"
+          >
+            <div className="font-medium">
+              {cls.start} – {cls.end}
+            </div>
             <div>{cls.subject}</div>
             <div className="text-slate-500">({cls.teacher})</div>
           </div>
@@ -21,11 +27,12 @@ function DayCard({ day, items }) {
   );
 }
 
-function StudentDashboard() {
+export default function StudentDashboard() {
   const navigate = useNavigate();
   const [me, setMe] = useState(null);
   const [week, setWeek] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(null); // 'grades' | 'assignments' | 'attendance' | null
 
   useEffect(() => {
     const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
@@ -64,6 +71,121 @@ function StudentDashboard() {
 
   const nextClass = week?.find((d) => d.items?.length)?.items?.[0] || null;
 
+  // Dummy data for modals
+  const gradesData = [
+    { subject: "Mathematics", teacher: "Ms. Rodriguez", grade: "A-", percentage: "88%" },
+    { subject: "Physics", teacher: "Mr. Wilson", grade: "B+", percentage: "85%" },
+    { subject: "Chemistry", teacher: "Dr. Chen", grade: "A", percentage: "92%" },
+    { subject: "English", teacher: "Mr. Thompson", grade: "B", percentage: "82%" },
+  ];
+
+  const assignmentsData = [
+    { task: "Physics Lab Report", due: "Tomorrow", status: "In Progress" },
+    { task: "Math Problem Set 5", due: "Friday", status: "Not Started" },
+    { task: "Chemistry Quiz", due: "Next Monday", status: "Studying" },
+    { task: "English Essay", due: "Next Week", status: "Planning" },
+  ];
+
+  const attendanceData = [
+    { class: "Mathematics", attended: "12/13", percentage: "92%" },
+    { class: "Physics", attended: "11/12", percentage: "92%" },
+    { class: "Chemistry", attended: "13/13", percentage: "100%" },
+    { class: "English", attended: "10/12", percentage: "83%" },
+  ];
+
+  const closeModal = () => setShowModal(null);
+
+  const renderModalContent = () => {
+    let title, description, items, type;
+
+    if (showModal === "grades") {
+      title = "Grades Overview";
+      description = "Your current semester grades and detailed academic progress.";
+      items = gradesData;
+      type = "grades";
+    } else if (showModal === "assignments") {
+      title = "Upcoming Assignments";
+      description = "Your pending assignments and important deadlines.";
+      items = assignmentsData;
+      type = "assignments";
+    } else if (showModal === "attendance") {
+      title = "Attendance Record";
+      description = "Your class attendance summary for this semester.";
+      items = attendanceData;
+      type = "attendance";
+    } else {
+      return null;
+    }
+
+    return (
+      <div
+        className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4"
+        onClick={closeModal}
+      >
+        <div
+          className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl overflow-y-auto max-h-[80vh]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h2 className="text-xl font-bold text-slate-800 mb-2">{title}</h2>
+          <p className="text-slate-600 mb-4">{description}</p>
+
+          <div className="space-y-3">
+            {items.map((item, idx) => (
+              <div
+                key={idx}
+                className="flex justify-between items-center p-3 bg-slate-50 rounded-lg"
+              >
+                <div>
+                  {type === "grades" && (
+                    <>
+                      <div className="font-medium text-slate-800">{item.subject}</div>
+                      <div className="text-sm text-slate-500">{item.teacher}</div>
+                    </>
+                  )}
+                  {type === "assignments" && (
+                    <>
+                      <div className="font-medium text-slate-800">{item.task}</div>
+                      <div className="text-sm text-slate-500">Due: {item.due}</div>
+                    </>
+                  )}
+                  {type === "attendance" && (
+                    <>
+                      <div className="font-medium text-slate-800">{item.class}</div>
+                      <div className="text-sm text-slate-500">
+                        Attended: {item.attended}
+                      </div>
+                    </>
+                  )}
+                </div>
+                <div className="text-right">
+                  {type === "grades" && (
+                    <>
+                      <div className="font-semibold text-slate-700">{item.grade}</div>
+                      <div className="text-xs text-slate-500">{item.percentage}</div>
+                    </>
+                  )}
+                  {type === "assignments" && (
+                    <div className="font-semibold text-slate-700">{item.status}</div>
+                  )}
+                  {type === "attendance" && (
+                    <div className="font-semibold text-slate-700">{item.percentage}</div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={closeModal}
+            className="w-full mt-4 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-dvh bg-gradient-to-b from-emerald-50 to-emerald-100/50 p-4">
       {/* Header */}
@@ -74,9 +196,7 @@ function StudentDashboard() {
               🎒
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-slate-800">
-                LearnLoop • Student
-              </h1>
+              <h1 className="text-lg font-semibold text-slate-800">LearnLoop • Student</h1>
               <p className="text-[11px] text-slate-500">My classes & schedule</p>
             </div>
           </div>
@@ -110,61 +230,50 @@ function StudentDashboard() {
       ) : (
         <main className="max-w-6xl mx-auto px-4 py-6 space-y-5">
 
+          {/* Section Header Card */}
+  <div className="stu-card p-4 flex items-center justify-between">
+    <div className="flex items-center gap-3">
+      <span className="stu-chip inline-flex items-center gap-1">
+        <span>📅</span> Weekly Timetable
+      </span>
 
-          {/* Next Class
-          {nextClass && (
-            <div className="stu-card p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl shadow-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center text-lg">⏰</div>
-                  <div>
-                    <div className="text-lg font-semibold text-blue-900">{nextClass.subject}</div>
-                    <div className="text-sm text-blue-700">with {nextClass.teacher}</div>
-                  </div>
-                </div>
-                <div className="text-right text-blue-600 font-medium">
-                  {nextClass.start} – {nextClass.end}
-                </div>
-              </div>
-            </div>
-          )} */}
-
-
-        {/* Next Class Card */}
-{nextClass && (
-  <div className="stu-card p-6 md:p-8 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6 shadow-lg">
-    
-    {/* Icon */}
-    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg md:text-xl font-bold">
-      ⏰
+      {me && (
+        <span className="text-xs text-slate-500">
+          {me.name} • <span className="text-slate-400">{me.email}</span>
+        </span>
+      )}
     </div>
 
-    {/* Class Info */}
-    <div className="flex-1">
-      <h3 className="text-sm md:text-base text-blue-700">
-        Next Class
-      </h3>
-      <p className="text-base md:text-lg font-semibold text-blue-900">
-        {nextClass.subject} with {nextClass.teacher}
-      </p>
-      
-    </div>
-
-    {/* Room */}
-    <div className="ml-auto text-right text-sm md:text-base">
-      <div className="text-blue-600 font-medium">Room 204</div>
-      <div className="stu-time">{nextClass.start} – {nextClass.end}</div>
+    <div className="hidden sm:flex items-center gap-2">
+      <button className="px-3 py-1.5 text-xs rounded-lg border border-slate-300 hover:bg-slate-50">
+        This Week
+      </button>
+      <button className="px-3 py-1.5 text-xs rounded-lg border border-slate-300 hover:bg-slate-50">
+        Next Week
+      </button>
     </div>
   </div>
-)}
 
-
-
-
-
+          {/* Next Class Card */}
+          {nextClass && (
+            <div className="stu-card p-6 md:p-8 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6 shadow-lg">
+              <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg md:text-xl font-bold">
+                ⏰
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm md:text-base text-blue-700">Next Class</h3>
+                <p className="text-base md:text-lg font-semibold text-blue-900">
+                  {nextClass.subject} with {nextClass.teacher}
+                </p>
+              </div>
+              <div className="ml-auto text-right text-sm md:text-base">
+                <div className="text-blue-600 font-medium">Room 204</div>
+                <div className="stu-time">{nextClass.start} – {nextClass.end}</div>
+              </div>
+            </div>
+          )}
 
           {/* Weekly Timetable */}
-           {/* Timetable Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {week.map((d) => (
               <DayCard key={d.day} day={d.day} items={d.items} />
@@ -176,7 +285,7 @@ function StudentDashboard() {
             {/* Grades */}
             <div
               className="action-card relative p-6 cursor-pointer rounded-xl bg-gradient-to-br from-white to-slate-50 border border-slate-200 overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1"
-              onClick={() => alert("View Grades")}
+              onClick={() => setShowModal("grades")}
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="icon-container w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-xl shadow-lg">
@@ -195,7 +304,7 @@ function StudentDashboard() {
             {/* Assignments */}
             <div
               className="action-card relative p-6 cursor-pointer rounded-xl bg-gradient-to-br from-white to-slate-50 border border-slate-200 overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1"
-              onClick={() => alert("View Assignments")}
+              onClick={() => setShowModal("assignments")}
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="icon-container w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 text-white flex items-center justify-center text-xl relative">
@@ -215,7 +324,7 @@ function StudentDashboard() {
             {/* Attendance */}
             <div
               className="action-card relative p-6 cursor-pointer rounded-xl bg-gradient-to-br from-white to-slate-50 border border-slate-200 overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1"
-              onClick={() => alert("View Attendance")}
+              onClick={() => setShowModal("attendance")}
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="icon-container w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-white flex items-center justify-center text-xl">
@@ -234,15 +343,24 @@ function StudentDashboard() {
 
           {/* Additional Quick Stats */}
           <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="stu-card p-4 text-center">12 <div className="text-xs text-slate-500">Total Courses</div></div>
-            <div className="stu-card p-4 text-center">8 <div className="text-xs text-slate-500">Completed</div></div>
-            <div className="stu-card p-4 text-center">24 <div className="text-xs text-slate-500">Credits</div></div>
-            <div className="stu-card p-4 text-center">3.7 <div className="text-xs text-slate-500">Overall GPA</div></div>
+            <div className="stu-card p-4 text-center">
+              12 <div className="text-xs text-slate-500">Total Courses</div>
+            </div>
+            <div className="stu-card p-4 text-center">
+              8 <div className="text-xs text-slate-500">Completed</div>
+            </div>
+            <div className="stu-card p-4 text-center">
+              24 <div className="text-xs text-slate-500">Credits</div>
+            </div>
+            <div className="stu-card p-4 text-center">
+              3.7 <div className="text-xs text-slate-500">Overall GPA</div>
+            </div>
           </div>
         </main>
       )}
+
+      {/* Modal */}
+      {renderModalContent()}
     </div>
   );
 }
-
-export default StudentDashboard;
