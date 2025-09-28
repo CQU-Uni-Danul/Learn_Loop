@@ -1,12 +1,12 @@
-from typing import List, Callable, Optional
-from fastapi import Depends, HTTPException
+from typing import Optional, List
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
+# NOTE: we are inside app/api/, so use two dots to go up into app/
 from ..db.session import get_db
 from ..db.models.user import User
 from ..core.security import decode_access_token
-
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -14,20 +14,22 @@ def get_current_user(
     creds: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ) -> User:
-    if not creds or creds.scheme.lower() != "bearer":
-        raise HTTPException(status_code=401, detail="Not authenticated")
+    if creds is None or not creds.credentials:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+
     try:
-        user_id = decode_access_token(creds.credentials)
-    except ValueError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        user_id = int(decode_access_token(creds.credentials))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
+
     user = db.query(User).filter(User.user_id == user_id).first()
     if not user:
-        raise HTTPException(status_code=401, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     return user
 
-def require_roles(allowed: List[str]) -> Callable[[User], User]:
-    def _dep(user: User = Depends(get_current_user)) -> User:
-        if user.role not in allowed:
-            raise HTTPException(status_code=403, detail="Forbidden")
-        return user
+def require_roles(allowed_roles: List[str]):
+    def _dep(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.role not in allowed_roles:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+        return current_user
     return _dep
