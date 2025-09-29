@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../lib/api";
@@ -27,12 +28,23 @@ function DayCard({ day, items }) {
   );
 }
 
+const markAllRead = async () => {
+  try {
+    await apiFetch("/api/student/notifications/mark-read", { method: "POST" });
+    setUnreadCount(0); // immediately reset the badge
+  } catch (err) {
+    console.error("Failed to mark notifications as read:", err);
+  }
+};
+
+
 export default function StudentDashboard() {
   const navigate = useNavigate();
   const [me, setMe] = useState(null);
   const [week, setWeek] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(null); // 'grades' | 'assignments' | 'attendance' | null
+  const [unreadCount, setUnreadCount] = useState(0); // 🔔 notifications
 
   useEffect(() => {
     const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
@@ -54,6 +66,10 @@ export default function StudentDashboard() {
 
         const timetable = await apiFetch(`/api/student/timetable/${profile.id}`);
         setWeek(timetable.week ?? []);
+
+        // 🔔 fetch unread notifications count
+        const notifRes = await apiFetch("/api/student/notifications/unread");
+        setUnreadCount(notifRes.unread ?? 0);
       } catch (err) {
         console.error(err);
         navigate("/");
@@ -229,31 +245,38 @@ export default function StudentDashboard() {
         <div className="stu-card p-4 text-sm text-slate-500 max-w-6xl mx-auto mt-6">Loading…!</div>
       ) : (
         <main className="max-w-6xl mx-auto px-4 py-6 space-y-5">
-
           {/* Section Header Card */}
-  <div className="stu-card p-4 flex items-center justify-between">
-    <div className="flex items-center gap-3">
-      <span className="stu-chip inline-flex items-center gap-1">
-        <span>📅</span> Weekly Timetable
-      </span>
+          <div className="stu-card p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="stu-chip inline-flex items-center gap-1">
+                <span>📅</span> Weekly Timetable
+              </span>
 
-      {me && (
-        <span className="text-xs text-slate-500">
-          {me.name} • <span className="text-slate-400">{me.email}</span>
-        </span>
-      )}
-    </div>
+              {me && (
+                <span className="text-xs text-slate-500">
+                  {me.name} • <span className="text-slate-400">{me.email}</span>
+                </span>
+              )}
+            </div>
 
-    <div className="hidden sm:flex items-center gap-2">
-  <button
-    onClick={() => navigate("/student/notifications")}
-    className="px-3 py-1.5 text-xs rounded-lg border border-emerald-300 text-emerald-700 hover:bg-emerald-50"
-  >
-    🔔 View Notifications
-  </button>
-</div>
+            <div className="hidden sm:flex items-center gap-2 relative">
+              <button
+                onClick={async () => {
+                  await markAllRead();
+                  navigate("/student/notifications");
+                }}
+                className="px-3 py-1.5 text-xs rounded-lg border border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+              >
+                🔔 View Notifications
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
 
-  </div>
+            </div>
+          </div>
 
           {/* Next Class Card */}
           {nextClass && (
@@ -365,3 +388,4 @@ export default function StudentDashboard() {
     </div>
   );
 }
+

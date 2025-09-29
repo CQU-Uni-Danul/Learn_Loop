@@ -101,3 +101,34 @@ def get_student_notifications(
     ).mappings().all()
 
     return {"notifications": list(rows)}
+
+
+@router.get("/notifications/unread")
+def get_unread_count(
+    db: Session = Depends(get_db),
+    current: User = Depends(get_current_user),
+):
+    if current.role != "student":
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    row = db.execute(
+        text("SELECT COUNT(*) FROM notifications WHERE sent_to = :sid AND is_read = 0"),
+        {"sid": current.user_id},
+    ).scalar_one()
+    return {"unread": int(row or 0)}
+
+
+@router.post("/notifications/mark-read")
+def mark_all_read(
+    db: Session = Depends(get_db),
+    current: User = Depends(get_current_user),
+):
+    if current.role != "student":
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    db.execute(
+        text("UPDATE notifications SET is_read = 1 WHERE sent_to = :sid"),
+        {"sid": current.user_id},
+    )
+    db.commit()
+    return {"success": True}

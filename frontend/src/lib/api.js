@@ -202,3 +202,8 @@ export async function updateTimetable(id, patch) {
 export async function deleteTimetable(id) {
   return apiFetch(`/api/timetable/${id}`, { method: "DELETE" });
 }
+
+
+export async function getStudentUnread() {
+  return apiFetch("/api/student/notifications/unread");
+}
