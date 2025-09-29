@@ -1,13 +1,133 @@
-# backend/app/api/routers/students.py
-from fastapi import APIRouter, Depends, HTTPException
-from typing import List, Dict, Any
-from sqlalchemy import text
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-
-from ...api.deps import get_current_user, require_roles, get_db
+from typing import List, Optional
+from sqlalchemy import text
+from ...db.session import get_db
+from ...db.models.student import Student
 from ...db.models.user import User
+from ...schemas.student import StudentCreate, StudentUpdate, StudentOut
+from ...core.security import hash_password
+from ..deps import require_roles
 
 router = APIRouter(tags=["student"]) 
+
+def _to_out(s: Student) -> StudentOut:
+    return StudentOut(
+        id=s.student_id,
+        full_name=s.full_name,
+        email=s.email,
+        role=s.role,
+        grade=str(s.grade) if s.grade is not None else None,
+        class_=s._class,  # map DB -> schema alias
+    )
+
+# ---------- Create (users + students) ----------
+@router.post("/", response_model=StudentOut, status_code=status.HTTP_201_CREATED)
+def create_student(
+    payload: StudentCreate,
+    db: Session = Depends(get_db),
+    current: User = Depends(get_current_user),
+):
+    # Only students can access
+    if current.role != "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden"
+        )
+
+    rows = db.execute(
+        text("""
+            SELECT n.notification_id, n.message, n.date_sent, n.is_read,
+                   u.full_name AS teacher_name
+            FROM notifications n
+            JOIN users u ON u.user_id = n.sent_by
+            WHERE n.sent_to = :sid
+            ORDER BY n.date_sent DESC
+        """),
+        {"sid": current.user_id}
+    ).mappings().all()
+
+    return {"notifications": list(rows)}
+
+
+@router.get("/notifications/unread")
+def get_unread_count(
+    db: Session = Depends(get_db),
+    current: User = Depends(get_current_user),
+):
+    if current.role != "student":
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    row = db.execute(
+        text("SELECT COUNT(*) FROM notifications WHERE sent_to = :sid AND is_read = 0"),
+        {"sid": current.user_id},
+    ).scalar_one()
+    return {"unread": int(row or 0)}
+
+
+@router.post("/notifications/mark-read")
+def mark_all_read(
+    db: Session = Depends(get_db),
+    current: User = Depends(get_current_user),
+):
+    s = db.query(Student).filter(Student.student_id == student_id).first()
+    if not s:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    u = db.query(User).filter(User.email == s.email).first()
+    if not u:
+        raise HTTPException(status_code=409, detail="Linked user not found for this student")
+
+    # email change -> ensure unique
+    if payload.email and payload.email != s.email:
+        if db.query(User).filter(User.email == payload.email).first():
+            raise HTTPException(status_code=409, detail="Email already in use")
+
+    try:
+        if payload.full_name is not None:
+            s.full_name = payload.full_name
+            u.full_name = payload.full_name
+
+        if payload.email is not None:
+            s.email = payload.email
+            u.email = payload.email
+
+        if payload.grade is not None:
+            s.grade = payload.grade
+
+        if payload.class_ is not None:
+            cls = payload.class_.strip()
+            if not cls:
+                raise HTTPException(status_code=422, detail="Class cannot be empty")
+            s._class = cls
+
+        if payload.password:
+            u.password_hash = hash_password(payload.password)
+
+        db.commit()
+        db.refresh(s)
+        return _to_out(s)
+
+    except Exception:
+        db.rollback()
+        raise
+
+# ---------- Delete (both tables) ----------
+@router.delete("/{student_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_student(student_id: int, db: Session = Depends(get_db), _admin = Depends(require_roles(["admin"]))):
+    s = db.query(Student).filter(Student.student_id == student_id).first()
+    if not s:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    try:
+        db.delete(s)
+        u = db.query(User).filter(User.email == s.email).first()
+        if u:
+            db.delete(u)
+        db.commit()
+        return
+    except Exception:
+        db.rollback()
+        raise
 
 
 @router.get("/schedule/me")
