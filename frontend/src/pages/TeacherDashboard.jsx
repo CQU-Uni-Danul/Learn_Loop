@@ -206,18 +206,7 @@ const sendNotification = async () => {
           <button onClick={() => navigate('/materials')} className="btn btn-tch-outline">View All Materials</button>
         </div>
 
-        {/* Messaging */}
-        <div className="tch-card p-4 space-y-3">
-          <div className="tch-chip">💬 Messaging</div>
-          <textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Send updates to students"
-            className="w-full p-2 border border-slate-300 rounded"
-          />
-          <button onClick={sendMessage} className="btn btn-tch">Send Message</button>
-          <button onClick={() => navigate('/messages')} className="btn btn-tch-outline">View Messages</button>
-        </div>
+       
 
         {/* Notifications */}
         <div className="tch-card p-4 space-y-3">
