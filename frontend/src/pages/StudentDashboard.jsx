@@ -36,53 +36,38 @@ export default function StudentDashboard() {
   const [showModal, setShowModal] = useState(null); // 'grades' | 'assignments' | 'attendance' | null
   const [unreadCount, setUnreadCount] = useState(0); // 🔔 notifications
 
- // 🔹 new helper function
-const fetchUnread = async () => {
-  try {
-    const notifRes = await apiFetch("/api/student/notifications/unread");
-    setUnreadCount(notifRes.unread ?? 0);
-  } catch (err) {
-    console.error("Failed to fetch unread notifications:", err);
-  }
-};
+  useEffect(() => {
+    const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
+    const token = sessionStorage.getItem("accessToken");
 
-useEffect(() => {
-  const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
-  const token = sessionStorage.getItem("accessToken");
-
-  if (!token || !user) {
-    navigate("/");
-    return;
-  }
-  if (user.role !== "student") {
-    navigate("/");
-    return;
-  }
-
-  (async () => {
-    try {
-      const profile = await apiFetch("/api/auth/me");
-      setMe(profile);
-
-      const timetable = await apiFetch(`/api/student/timetable/${profile.id}`);
-      setWeek(timetable.week ?? []);
-
-      // 🔄 initial fetch
-      await fetchUnread();
-    } catch (err) {
-      console.error(err);
+    if (!token || !user) {
       navigate("/");
-    } finally {
-      setLoading(false);
+      return;
     }
-  })();
+    if (user.role !== "student") {
+      navigate("/");
+      return;
+    }
 
-  // 🔄 auto-refresh every 30 minutes
-  const interval = setInterval(fetchUnread, 30 * 60 * 1000);
+    (async () => {
+      try {
+        const profile = await apiFetch("/api/auth/me");
+        setMe(profile);
 
-  return () => clearInterval(interval); // cleanup
-}, [navigate]);
+        const timetable = await apiFetch(`/api/student/timetable/${profile.id}`);
+        setWeek(timetable.week ?? []);
 
+        // 🔔 fetch unread notifications count
+        const notifRes = await apiFetch("/api/student/notifications/unread");
+        setUnreadCount(notifRes.unread ?? 0);
+      } catch (err) {
+        console.error(err);
+        navigate("/");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [navigate]);
 
   const logout = () => {
     sessionStorage.removeItem("accessToken");
