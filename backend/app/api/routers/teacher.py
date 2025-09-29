@@ -92,6 +92,32 @@ def list_teachers(
     return [_to_out(t) for t in rows]
 
 
+# -----------------------------
+# List notifications sent by this teacher
+# -----------------------------
+@router.get("/notifications")
+def list_notifications(
+    db: Session = Depends(get_db),
+    current: User = Depends(get_current_user),
+):
+    print(f"🔥 NOTIFICATIONS ENDPOINT HIT for user_id={current.user_id}, role={current.role}")
+
+    rows = db.execute(
+        text("""
+            SELECT n.notification_id, n.sent_to, n.message, n.date_sent, n.is_read, u.full_name AS student_name
+            FROM notifications n
+            JOIN users u ON u.user_id = n.sent_to
+            WHERE n.sent_by = :tid
+            ORDER BY n.date_sent DESC
+            LIMIT 50
+        """),
+        {"tid": current.user_id}
+    ).mappings().all()
+
+    print(f"DEBUG: Found {len(rows)} notifications")
+    return {"notifications": list(rows)}
+
+
 @router.get("/{teacher_id}", response_model=TeacherOut)
 def get_teacher(
     teacher_id: int,
@@ -231,28 +257,3 @@ def send_notification(
     return {"ok": True, "sent_to": len(student_ids), "message": "Notification sent"}
 
 
-# -----------------------------
-# List notifications sent by this teacher
-# -----------------------------
-@router.get("/notifications")
-def list_notifications(
-    current: User = Depends(require_roles(["teacher", "admin"])),
-    db: Session = Depends(get_db),
-):
-    print(f"🔥 NOTIFICATIONS ENDPOINT HIT!")  # This should print if endpoint is reached
-    print(f"DEBUG: Successfully authenticated user {current.user_id} with role {current.role}")
-    
-    rows = db.execute(
-        text("""
-            SELECT n.notification_id, n.sent_to, n.message, n.date_sent, n.is_read, u.full_name AS student_name
-            FROM notifications n
-            JOIN users u ON u.user_id = n.sent_to
-            WHERE n.sent_by = :tid
-            ORDER BY n.date_sent DESC
-            LIMIT 50
-        """),
-        {"tid": current.user_id}
-    ).mappings().all()
-    
-    print(f"DEBUG: Found {len(rows)} notifications")
-    return {"notifications": list(rows)}
