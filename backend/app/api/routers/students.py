@@ -238,7 +238,7 @@ def get_unread_count(
     return {"unread": int(row or 0)}
 
 
-@router.post("/notifications/mark-read")
+@router.post("/notifications/mark-read-not")
 def mark_all_read(
     db: Session = Depends(get_db),
     current: User = Depends(get_current_user),
