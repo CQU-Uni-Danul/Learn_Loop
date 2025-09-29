@@ -46,6 +46,19 @@ const fetchUnread = async () => {
   }
 };
 
+
+const markAllRead = async () => {
+  try {
+    if (!me?.id) return;
+    await apiFetch(`/api/student/notifications/${me.id}/mark-read`, { method: "POST" });
+    setUnreadCount(0);
+  } catch (err) {
+    console.error("Failed to mark notifications as read:", err);
+  }
+};
+
+
+
 useEffect(() => {
   const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
   const token = sessionStorage.getItem("accessToken");
@@ -66,6 +79,9 @@ useEffect(() => {
 
       const timetable = await apiFetch(`/api/student/timetable/${profile.id}`);
       setWeek(timetable.week ?? []);
+      
+      const notifCount = await apiFetch(`/api/student/notifications/${profile.id}/unread-count`);
+      setUnreadCount(notifCount.count);
 
       // 🔄 initial fetch
       await fetchUnread();
@@ -266,16 +282,20 @@ useEffect(() => {
 
             <div className="hidden sm:flex items-center gap-2 relative">
               <button
-                onClick={() => navigate("/student/notifications")}
+                onClick={async () => {
+                  await markAllRead(); // reset count
+                  navigate("/student/notifications");
+                }}
                 className="px-3 py-1.5 text-xs rounded-lg border border-emerald-300 text-emerald-700 hover:bg-emerald-50 relative"
               >
                 🔔 View Notifications
                 {unreadCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                     {unreadCount}
                   </span>
                 )}
               </button>
+
             </div>
           </div>
 
