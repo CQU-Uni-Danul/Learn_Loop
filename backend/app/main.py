@@ -19,6 +19,7 @@ from .api.routers import timetable, students, teacher
 from .api.routers import user as users_router 
 from .db.models import teacher as _teacher_models
 
+
 # Create tables (Student included)
 Base.metadata.create_all(bind=engine)
 
@@ -73,3 +74,4 @@ app.include_router(users_router.router, prefix="/api/users", tags=["users"])
 app.include_router(students.router,  prefix="/api/student",  tags=["students"])
 app.include_router(timetable.router, prefix="/api/timetable", tags=["timetable"])
 app.include_router(teacher.router,   prefix="/api/teacher",   tags=["teacher"])
+
