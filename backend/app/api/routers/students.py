@@ -116,3 +116,19 @@ def get_unread_count(
         {"sid": current.user_id},
     ).scalar_one()
     return {"unread": int(row or 0)}
+
+
+@router.post("/notifications/mark-read")
+def mark_all_read(
+    db: Session = Depends(get_db),
+    current: User = Depends(get_current_user),
+):
+    if current.role != "student":
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    db.execute(
+        text("UPDATE notifications SET is_read = 1 WHERE sent_to = :sid"),
+        {"sid": current.user_id},
+    )
+    db.commit()
+    return {"success": True}
