@@ -116,18 +116,3 @@ def get_unread_count(
         {"sid": current.user_id},
     ).scalar_one()
     return {"unread": int(row or 0)}
-
-
-
-@router.post("/notifications/{student_id}/mark-read")
-def mark_notifications_read(student_id: int, db: Session = Depends(get_db), current=Depends(get_current_user)):
-    # Only allow student to mark their own notifications
-    if current.user_id != student_id and current.role != "teacher":
-        raise HTTPException(status_code=403, detail="Not authorized")
-
-    db.query(Notification).filter(
-        Notification.student_id == student_id,
-        Notification.is_read == False
-    ).update({"is_read": True})
-    db.commit()
-    return {"success": True}
