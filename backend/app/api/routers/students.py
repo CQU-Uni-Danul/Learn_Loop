@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from sqlalchemy import text
 from ...db.session import get_db
 from ...db.models.student import Student
 from ...db.models.user import User
 from ...schemas.student import StudentCreate, StudentUpdate, StudentOut
 from ...core.security import hash_password
-from ..deps import require_roles
+from ...api.deps import get_current_user, require_roles, get_db
 
 router = APIRouter(tags=["student"]) 
 
