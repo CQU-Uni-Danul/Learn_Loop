@@ -246,12 +246,13 @@ export default function StudentDashboard() {
 
     <div className="hidden sm:flex items-center gap-2">
   <button
-    onClick={() => navigate("/notifications")}
-    className="px-3 py-1.5 text-xs rounded-lg border border-slate-300 hover:bg-slate-50"
+    onClick={() => navigate("/student/notifications")}
+    className="px-3 py-1.5 text-xs rounded-lg border border-emerald-300 text-emerald-700 hover:bg-emerald-50"
   >
-    View Notifications
+    🔔 View Notifications
   </button>
 </div>
+
   </div>
 
           {/* Next Class Card */}
