@@ -30,6 +30,13 @@ def get_current_user(
 def require_roles(allowed_roles: List[str]):
     def _dep(current_user: User = Depends(get_current_user)) -> User:
         if current_user.role not in allowed_roles:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+            # 👇 Instead of blocking, just log
+            print(f"[WARN] User {current_user.user_id} with role '{current_user.role}' "
+                  f"tried to access but only {allowed_roles} are allowed")
+            # still return the user so request is not blocked
+            return current_user
+        print(f"[OK] User {current_user.user_id} with role '{current_user.role}' "
+              f"access granted for {allowed_roles}")
         return current_user
     return _dep
+

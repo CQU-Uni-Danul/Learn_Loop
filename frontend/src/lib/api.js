@@ -174,3 +174,31 @@ export async function sendNotification(content) {
 export async function listNotifications() {
   return apiFetch("/api/teacher/notifications");
 }
+
+
+/* ---------- TIMETABLE (CRUD) ---------- */
+export async function listTimetables({ teacher_id, student_id, day } = {}) {
+  const params = new URLSearchParams();
+  if (teacher_id) params.set("teacher_id", teacher_id);
+  if (student_id) params.set("student_id", student_id);
+  if (day) params.set("day", day);
+  return apiFetch(`/api/timetable/?${params.toString()}`);
+}
+
+export async function createTimetable(payload) {
+  return apiFetch("/api/timetable/", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateTimetable(id, patch) {
+  return apiFetch(`/api/timetable/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
+
+export async function deleteTimetable(id) {
+  return apiFetch(`/api/timetable/${id}`, { method: "DELETE" });
+}

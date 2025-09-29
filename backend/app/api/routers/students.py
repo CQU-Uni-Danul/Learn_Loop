@@ -74,3 +74,30 @@ def group_by_day(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             }
         )
     return list(grouped.values())
+
+# GET student notifications
+
+@router.get("/notifications")
+def get_student_notifications(
+    db: Session = Depends(get_db),
+    current: User = Depends(get_current_user),
+):
+    # Only students can access
+    if current.role != "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden"
+        )
+
+    rows = db.execute(
+        text("""
+            SELECT n.notification_id, n.message, n.date_sent, n.is_read,
+                   u.full_name AS teacher_name
+            FROM notifications n
+            JOIN users u ON u.user_id = n.sent_by
+            WHERE n.sent_to = :sid
+            ORDER BY n.date_sent DESC
+        """),
+        {"sid": current.user_id}
+    ).mappings().all()
+
+    return {"notifications": list(rows)}

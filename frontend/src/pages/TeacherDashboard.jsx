@@ -181,7 +181,7 @@ const sendNotification = async () => {
               <ClassRow key={i} subject={c.subject} section={c.section} time={c.time} />
             ))
           )}
-          <button onClick={() => navigate('/timetable')} className="btn btn-tch-outline m-4">Edit Timetable</button>
+          <button onClick={() => navigate('/timetable')} className="btn btn-tch-outline m-4">Create / Edit Timetable</button>
         </div>
 
         {/* Materials */}

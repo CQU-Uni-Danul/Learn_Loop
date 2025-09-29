@@ -1,9 +1,8 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 
-export default function NotificationsPage() {
+export default function StudentNotificationsPage() {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,7 +12,7 @@ export default function NotificationsPage() {
     const token = sessionStorage.getItem("accessToken");
     const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
 
-    if (!token || !user || user.role !== "teacher") {
+    if (!token || !user || user.role !== "student") {
       navigate("/");
       return;
     }
@@ -24,11 +23,11 @@ export default function NotificationsPage() {
         const profile = await apiFetch("/api/auth/me");
         setMe(profile);
 
-        // Load notifications
-        const notifs = await apiFetch("/api/teacher/notifications");
+        // Load notifications (for student)
+        const notifs = await apiFetch("/api/student/notifications");
         setNotifications(notifs.notifications ?? []);
       } catch (err) {
-        console.error("Failed to load notifications:", err);
+        console.error("Failed to load student notifications:", err);
         navigate("/");
       } finally {
         setLoading(false);
@@ -44,7 +43,7 @@ export default function NotificationsPage() {
 
   const refreshNotifications = async () => {
     try {
-      const notifs = await apiFetch("/api/teacher/notifications");
+      const notifs = await apiFetch("/api/student/notifications");
       setNotifications(notifs.notifications ?? []);
     } catch (err) {
       console.error("Failed to refresh notifications:", err);
@@ -52,26 +51,26 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="min-h-dvh tch-bg">
+    <div className="min-h-dvh bg-gradient-to-b from-emerald-50 to-emerald-100/50">
       {/* Header */}
       <header className="bg-white border-b border-slate-200 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate("/teacher")}
+              onClick={() => navigate("/student")}
               className="text-slate-600 hover:text-slate-800"
             >
               ← Back
             </button>
-            <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow">
               🔔
             </div>
             <div>
               <h1 className="text-lg font-semibold text-slate-800">
-                All Notifications
+                My Notifications
               </h1>
               <p className="text-[11px] text-slate-500">
-                Manage your sent notifications
+                Messages sent to you by teachers/admins
               </p>
             </div>
           </div>
@@ -79,29 +78,29 @@ export default function NotificationsPage() {
             {me && (
               <>
                 <span className="hidden sm:inline text-sm text-slate-600">
-                  Welcome, {me.name?.split(" ")[0]}
+                  Hi, {me.name?.split(" ")[0]}
                 </span>
-                <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center text-sm font-semibold">
-                  T
+                <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-sm font-semibold">
+                  S
                 </div>
               </>
             )}
-            <button onClick={logout} className="btn btn-tch-outline">
+            <button onClick={logout} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
               Logout
             </button>
           </div>
         </div>
       </header>
 
-      <div className="topline-tch" />
+      <div className="h-1 bg-emerald-600" />
 
       <main className="max-w-6xl mx-auto px-4 py-6">
-        <div className="tch-card overflow-hidden">
-          <div className="px-4 py-2.5 text-sm font-semibold bg-[rgb(255_251_235)] text-[rgb(217_119_6)] flex items-center justify-between">
-            <span>Sent Notifications ({notifications.length})</span>
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow">
+          <div className="px-4 py-2.5 text-sm font-semibold bg-emerald-50 text-emerald-700 flex items-center justify-between">
+            <span>Received Notifications ({notifications.length})</span>
             <button
               onClick={refreshNotifications}
-              className="text-xs px-2 py-1 bg-white rounded text-amber-700 hover:bg-amber-50"
+              className="text-xs px-2 py-1 bg-white rounded text-emerald-700 hover:bg-emerald-50"
             >
               Refresh
             </button>
@@ -114,10 +113,8 @@ export default function NotificationsPage() {
           ) : notifications.length === 0 ? (
             <div className="p-6 text-center text-slate-500">
               <div className="text-4xl mb-2">📭</div>
-              <p>No notifications sent yet</p>
-              <p className="text-xs mt-2">
-                Go back to dashboard and send a notification to see it here
-              </p>
+              <p>No notifications yet</p>
+              <p className="text-xs mt-2">Your teachers will send important messages here</p>
             </div>
           ) : (
             <div className="divide-y divide-slate-200">
@@ -129,11 +126,11 @@ export default function NotificationsPage() {
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-slate-700">
-                        To: {notification.student_name}
+                        From: {notification.sender_name}
                       </span>
-                      {notification.is_read && (
-                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                          ✓ Read
+                      {!notification.is_read && (
+                        <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded">
+                          • New
                         </span>
                       )}
                     </div>
@@ -153,4 +150,3 @@ export default function NotificationsPage() {
     </div>
   );
 }
-
