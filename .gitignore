@@ -96,3 +96,7 @@ poetry.lock
 
 # If you generate reports
 reports/
+
+__pycache__/
+*.pyc
+venv/

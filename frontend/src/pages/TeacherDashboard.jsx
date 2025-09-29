@@ -84,7 +84,7 @@ export default function TeacherDashboard() {
               🍎
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-slate-800">EduManage Pro • Teacher</h1>
+              <h1 className="text-lg font-semibold text-slate-800">LearnLoop • Teacher</h1>
               <p className="text-[11px] text-slate-500">Classes, attendance & materials</p>
             </div>
           </div>

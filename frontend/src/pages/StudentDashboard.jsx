@@ -8,49 +8,143 @@ function StudentDashboard() {
 
   useEffect(() => {
     const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
-    const token = sessionStorage.getItem("accessToken");
-    if (!user || user.role !== "student" || !token) {
-      navigate("/", { replace: true });
-      return;
-    }
+    if (!token || !user) { nav("/"); return; }
+    if (user.role !== "student") { nav("/"); return; }
 
-    async function fetchStudents() {
+    (async () => {
       try {
-        const data = await listStudents();
-        setStudents(data);
-      } catch (err) {
-        console.error("Failed to load students:", err.message);
-      }
-    }
+        const profile = await api("/api/auth/me");
+        setMe(profile);
+        // const timetable = await api(`/timetable/${profile.id}`);
+        // console.log(timetable.week);
+        // setWeek(timetable.week ?? []);
 
-    fetchStudents();
-  }, [navigate]);
+        const timetable = await api(`/student/timetable/${profile.id}`);
+        console.log(timetable.week);
+        setWeek(timetable.week ?? []);
+
+      } catch {
+        nav("/");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [nav]);
+
+  const logout = () => {
+    sessionStorage.removeItem("accessToken");
+    sessionStorage.removeItem("currentUser");
+    nav("/");
+  };
+
+  const nextClass =
+    week?.find(d => d.items?.length)?.items?.[0] || null;
 
   return (
-    <div className="max-w-4xl mx-auto py-6">
-      <h2 className="text-2xl font-bold mb-4">Students</h2>
-      <table className="w-full border">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="p-2 text-left">Name</th>
-            <th className="p-2 text-left">Email</th>
-            <th className="p-2 text-left">Grade</th>
-            <th className="p-2 text-left">Class</th>
-          </tr>
-        </thead>
-        <tbody>
-          {students.map((s) => (
-            <tr key={s.id} className="border-t">
-              <td className="p-2">{s.full_name}</td>
-              <td className="p-2">{s.email}</td>
-              <td className="p-2">{s.grade || "-"}</td>
-              <td className="p-2">{s._class || "-"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="min-h-dvh bg-gradient-to-b from-emerald-50 to-emerald-100/50">
+      {/* Header */}
+      <header className="bg-white border-b border-slate-200 shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow">
+              🎒
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold text-slate-800">LearnLoop • Student</h1>
+              <p className="text-[11px] text-slate-500">My classes & schedule</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            {me && (
+              <>
+                <span className="hidden sm:inline text-sm text-slate-600">
+                  Welcome, {me.name.split(" ")[0]}
+                </span>
+                <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-sm font-semibold">
+                  S
+                </div>
+              </>
+            )}
+            <button
+              onClick={logout}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Green line */}
+      <div className="h-1 bg-emerald-600"></div>
+
+      {/* Content */}
+      <main className="max-w-6xl mx-auto px-4 py-6 space-y-5">
+        {/* Section header card */}
+        <div className="stu-card p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="stu-chip inline-flex items-center gap-1">
+              <span>📅</span> Weekly Timetable
+            </span>
+            {me && (
+              <span className="text-xs text-slate-500">
+                {me.name} • <span className="text-slate-400">{me.email}</span>
+              </span>
+            )}
+          </div>
+          <div className="hidden sm:flex items-center gap-2">
+            <button className="px-3 py-1.5 text-xs rounded-lg border border-slate-300 hover:bg-slate-50">
+              This Week
+            </button>
+            <button className="px-3 py-1.5 text-xs rounded-lg border border-slate-300 hover:bg-slate-50">
+              Next Week
+            </button>
+          </div>
+        </div>
+
+        {/* Next class card */}
+        {nextClass && (
+          <div className="stu-card p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                ⏰
+              </div>
+              <div>
+                <div className="text-sm font-medium text-slate-800">Next up: {nextClass.subject}</div>
+                <div className="text-xs text-slate-500">with {nextClass.teacher}</div>
+              </div>
+            </div>
+            <div className="stu-time">{nextClass.start} – {nextClass.end}</div>
+          </div>
+        )}
+
+        {/* Timetable grid */}
+        {loading ? (
+          <div className="stu-card p-4 text-sm text-slate-500">Loading…!</div>
+        ) : week.length === 0 ? (
+          <div className="stu-card p-4 text-sm text-slate-500">No classes found.</div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+            
+            {week.map((d) => (
+              <DayCard key={d.day} day={d.day} items={d.items} />
+            ))}
+          </div>
+        )}
+
+        {/* Quick actions */}
+        <div className="stu-card p-4 flex flex-wrap items-center gap-3">
+          <button className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition">
+            Join Class
+          </button>
+          <button className="px-4 py-2 rounded-lg border border-emerald-600 text-emerald-700 text-sm font-medium hover:bg-emerald-50 transition">
+            Messages
+          </button>
+          <button className="px-4 py-2 rounded-lg border border-emerald-600 text-emerald-700 text-sm font-medium hover:bg-emerald-50 transition">
+            Attendance
+          </button>
+        </div>
+      </main>
     </div>
   );
 }
-
-export default StudentDashboard;

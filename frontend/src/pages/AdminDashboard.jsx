@@ -217,7 +217,7 @@ export default function AdminDashboard() {
                 <span className="text-white font-bold text-lg">📚</span>
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">EduManage Pro</h1>
+                <h1 className="text-2xl font-bold text-gray-900">LearnLoop</h1>
                 <p className="text-sm text-gray-600">School Management System</p>
               </div>
             </div>
