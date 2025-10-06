@@ -205,7 +205,7 @@ export async function deleteTimetable(id) {
 
 
 export async function getStudentUnread() {
-  return apiFetch("/api/student/notifications/unread");
+  return apiFetch("/api/students/notifications/unread");
 }
 
 // ---------- ADD THESE NAMED EXPORTS ----------

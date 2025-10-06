@@ -24,7 +24,7 @@ export default function StudentNotificationsPage() {
         setMe(profile);
 
         // Load notifications (for student)
-        const notifs = await apiFetch("/api/student/notifications");
+        const notifs = await apiFetch("/api/students/notifications");
         setNotifications(notifs.notifications ?? []);
       } catch (err) {
         console.error("Failed to load student notifications:", err);
@@ -43,7 +43,7 @@ export default function StudentNotificationsPage() {
 
   const refreshNotifications = async () => {
     try {
-      const notifs = await apiFetch("/api/student/notifications");
+      const notifs = await apiFetch("/api/students/notifications");
       setNotifications(notifs.notifications ?? []);
     } catch (err) {
       console.error("Failed to refresh notifications:", err);
