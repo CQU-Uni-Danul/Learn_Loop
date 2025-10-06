@@ -150,11 +150,28 @@ export async function getMaterials() {
   return apiFetch("/api/teacher/materials");
 }
 
-export async function uploadMaterial(file) {
-  const body = new FormData();
-  body.append("file", file);
-  return apiFetch("/api/teacher/materials/upload", { method: "POST", body });
+// src/lib/api.js
+export async function uploadMaterial(formData) {
+  // formData: { title, description?, subject?, target_grade, target_section?, file }
+  return apiFetch('/api/materials', {
+    method: 'POST',
+    body: formData, // don't set Content-Type; browser sets multipart boundary
+    headers: {}     // apiFetch will still add Authorization for you
+  });
 }
+
+export async function listMyMaterials() {
+  return apiFetch('/api/materials/mine');
+}
+
+export async function listMaterialsForMe() {
+  return apiFetch('/api/materials/for-me');
+}
+
+export async function deleteMaterial(id) {
+  return apiFetch(`/api/materials/${id}`, { method: 'DELETE' });
+}
+
 
 export async function sendMessage(content) {
   return apiFetch("/api/teacher/messages/send", {

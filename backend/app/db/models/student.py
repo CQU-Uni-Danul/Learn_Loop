@@ -20,3 +20,4 @@ class Student(Base):
 
     # Handy relationship if you need it later
     user = relationship("User", backref=backref("student", uselist=False, cascade="all,delete"))
+    

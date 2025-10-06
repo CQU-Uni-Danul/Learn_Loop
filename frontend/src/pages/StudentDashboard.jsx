@@ -29,8 +29,6 @@ function DayCard({ day, items }) {
 }
 
 
-
-
 export default function StudentDashboard() {
   const navigate = useNavigate();
   const [me, setMe] = useState(null);
@@ -59,7 +57,9 @@ export default function StudentDashboard() {
         const profile = await apiFetch("/api/auth/me");
         setMe(profile);
 
-        const timetable = await apiFetch(`/api/timetable/${profile.id}`);
+        const {student_id} = await apiFetch(`/api/auth/get_student?user_id=${profile.id}`);
+        const timetable = await apiFetch(`/api/timetable/${student_id}`);
+
         setWeek(timetable.week ?? []);
 
         // 🔔 fetch unread notifications count

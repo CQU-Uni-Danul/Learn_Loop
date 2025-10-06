@@ -178,21 +178,21 @@ def get_timetable(
         raise HTTPException(status_code=403, detail="Not authorized")
 
     sql = text("""
-        SELECT DISTINCT
-            tt.day_of_week AS day,
-            tt.start_time  AS start,
-            tt.end_time    AS end,
-            c.class_name   AS subject,
-            u.full_name    AS teacher
-        FROM timetables tt
-        JOIN class_students cs ON cs.student_id = tt.student_id
-        JOIN classes c ON tt.class_id = c.class_id
-        LEFT JOIN users u ON tt.teacher_id = u.user_id
-        WHERE cs.student_id = :student_id
-        ORDER BY FIELD(tt.day_of_week,
-            'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'),
-            tt.start_time;
-    """)
+    SELECT DISTINCT
+        tt.day_of_week AS day,
+        tt.start_time  AS start,
+        tt.end_time    AS end,
+        t.subject      AS subject,   -- from teachers table
+        t.full_name    AS teacher    -- from teachers table
+    FROM timetables tt
+    LEFT JOIN teachers t
+           ON t.teacher_id = tt.teacher_id
+    WHERE tt.student_id = :student_id
+    ORDER BY FIELD(tt.day_of_week,
+                   'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'),
+             tt.start_time;
+""")
+
     result = db.execute(sql, {"student_id": student_id}).mappings().all()
     rows = [dict(r) for r in result]
     if not rows:
