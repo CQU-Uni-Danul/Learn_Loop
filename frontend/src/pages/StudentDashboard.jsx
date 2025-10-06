@@ -29,14 +29,7 @@ function DayCard({ day, items }) {
   );
 }
 
-const markAllRead = async () => {
-  try {
-    await apiFetch("/api/student/notifications/mark-read", { method: "POST" });
-    setUnreadCount(0); // immediately reset the badge
-  } catch (err) {
-    console.error("Failed to mark notifications as read:", err);
-  }
-};
+
 
 
 export default function StudentDashboard() {
@@ -46,6 +39,8 @@ export default function StudentDashboard() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(null); // 'grades' | 'assignments' | 'attendance' | null
   const [unreadCount, setUnreadCount] = useState(0); // 🔔 notifications
+
+  
 
   useEffect(() => {
     const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
@@ -80,11 +75,22 @@ export default function StudentDashboard() {
     })();
   }, [navigate]);
 
+  const markAllRead = async () => {
+  try {
+    await apiFetch("/api/student/notifications/mark-read-not", { method: "POST" });
+    setUnreadCount(0); // immediately reset the badge
+  } catch (err) {
+    console.error("Failed to mark notifications as read:", err);
+  }
+};
+
   const logout = () => {
     sessionStorage.removeItem("accessToken");
     sessionStorage.removeItem("currentUser");
     navigate("/");
   };
+
+
 
   const nextClass = week?.find((d) => d.items?.length)?.items?.[0] || null;
 
