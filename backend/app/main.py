@@ -18,6 +18,7 @@ from .api.deps import get_current_user
 from .api.routers import timetable, students, teacher
 from .api.routers import user as users_router 
 from .db.models import teacher as _teacher_models
+from .api.routers import chatbot
 
 # Create tables (Student included)
 Base.metadata.create_all(bind=engine)
@@ -70,6 +71,7 @@ def debug_user(current: User = Depends(get_current_user)):
 
 # Include routers with prefixes
 app.include_router(users_router.router, prefix="/api/users", tags=["users"])
-app.include_router(students.router,  prefix="/api/student",  tags=["students"])
+app.include_router(students.router,  prefix="/api/students",  tags=["students"])
 app.include_router(timetable.router, prefix="/api/timetable", tags=["timetable"])
 app.include_router(teacher.router,   prefix="/api/teacher",   tags=["teacher"])
+app.include_router(chatbot.router, prefix="/api/chat", tags=["chat"])

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../lib/api";
+import ChatbotWidget from "../components/admin/ChatbotWidget";
 
 // Single day card component for timetable
 function DayCard({ day, items }) {
@@ -64,12 +65,12 @@ export default function StudentDashboard() {
         const profile = await apiFetch("/api/auth/me");
         setMe(profile);
 
-        const timetable = await apiFetch(`/api/student/timetable/${profile.id}`);
-        setWeek(timetable.week ?? []);
+        // const timetable = await apiFetch(`/api/student/timetable/${profile.id}`);
+        // setWeek(timetable.week ?? []);
 
-        // 🔔 fetch unread notifications count
-        const notifRes = await apiFetch("/api/student/notifications/unread");
-        setUnreadCount(notifRes.unread ?? 0);
+        // // 🔔 fetch unread notifications count
+        // const notifRes = await apiFetch("/api/student/notifications/unread");
+        // setUnreadCount(notifRes.unread ?? 0);
       } catch (err) {
         console.error(err);
         navigate("/");
@@ -382,7 +383,7 @@ export default function StudentDashboard() {
           </div>
         </main>
       )}
-
+      <ChatbotWidget role="student" />
       {/* Modal */}
       {renderModalContent()}
     </div>

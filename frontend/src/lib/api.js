@@ -207,3 +207,18 @@ export async function deleteTimetable(id) {
 export async function getStudentUnread() {
   return apiFetch("/api/student/notifications/unread");
 }
+
+// ---------- ADD THESE NAMED EXPORTS ----------
+export async function chatStudent(message) {
+  return apiFetch("/api/chat/student", {
+    method: "POST",
+    body: JSON.stringify({ message }),
+  });
+}
+
+export async function chatTeacher(message) {
+  return apiFetch("/api/chat/teacher", {
+    method: "POST",
+    body: JSON.stringify({ message }),
+  });
+}

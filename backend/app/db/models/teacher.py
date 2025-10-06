@@ -1,15 +1,19 @@
-from sqlalchemy import Column, Integer, String, TIMESTAMP, text
+from sqlalchemy import Column, Integer, String, ForeignKey, Enum
+from sqlalchemy.orm import relationship, backref
 from ...db.base import Base
 
 class Teacher(Base):
     __tablename__ = "teachers"
 
-    teacher_id   = Column(Integer, primary_key=True, index=True)
-    full_name    = Column(String(100), nullable=False)
-    email        = Column(String(120), nullable=False, unique=True, index=True)
-    role         = Column(String(20),  nullable=False, default="teacher")
-    subject      = Column(String(100), nullable=True)
-    department   = Column(String(100), nullable=True)
-    employee_code= Column(String(20),  nullable=True, unique=True)
-    phone        = Column(String(20),  nullable=True)
-    date_created = Column(TIMESTAMP,   nullable=False, server_default=text("CURRENT_TIMESTAMP"))
+    teacher_id = Column(Integer, primary_key=True, index=True)
+    user_id    = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+
+    full_name  = Column(String(100), nullable=False)
+    email      = Column(String(255), nullable=False, unique=True, index=True)
+    role       = Column(String(20), nullable=False, default="teacher")  # or Enum('teacher')
+    subject    = Column(String(100))
+    department = Column(String(100))
+    employee_code = Column(String(50))
+    phone      = Column(String(20))  # +61#########
+
+    user = relationship("User", backref=backref("teacher", uselist=False, cascade="all,delete"))

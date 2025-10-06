@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../lib/api"; // Make sure this handles JWT headers
+import ChatbotWidget from "../components/admin/ChatbotWidget";
 
 /* small stat card */
 function Stat({ label, value }) {
@@ -238,6 +239,7 @@ const sendNotification = async () => {
           <button className="btn btn-tch-outline">Create Assignment</button>
         </div>
       </main>
+      <ChatbotWidget role="teacher" />
     </div>
   );
 }
