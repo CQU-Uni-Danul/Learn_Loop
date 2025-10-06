@@ -21,7 +21,7 @@ from .api.routers import timetable, students, teacher, materials
 from .api.routers import user as users_router 
 from .db.models import teacher as _teacher_models
 from .api.routers import chatbot
-
+from .db.models import material as _material_models 
 # Create tables (Student included)
 Base.metadata.create_all(bind=engine)
 

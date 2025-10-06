@@ -1,7 +1,8 @@
-
+// frontend/src/pages/StudentDashboard.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../lib/api";
+import { listMaterialsForMe } from "../lib/api";
 
 // Single day card component for timetable
 function DayCard({ day, items }) {
@@ -28,16 +29,23 @@ function DayCard({ day, items }) {
   );
 }
 
-
 export default function StudentDashboard() {
   const navigate = useNavigate();
   const [me, setMe] = useState(null);
   const [week, setWeek] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(null); // 'grades' | 'assignments' | 'attendance' | null
-  const [unreadCount, setUnreadCount] = useState(0); // 🔔 notifications
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [materials, setMaterials] = useState([]);   // ← NEW
 
-  
+  // build file URL for local uploads or absolute URLs (S3, etc.)
+  const API_BASE = import.meta?.env?.VITE_API_BASE || "http://localhost:8000";
+  const fileUrl = (p) => {
+    if (!p) return "#";
+    if (/^https?:\/\//i.test(p)) return p;                  // absolute (e.g., S3)
+    const path = p.startsWith("/") ? p : `/${p}`;           // local static
+    return `${API_BASE}${path}`;
+  };
 
   useEffect(() => {
     const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
@@ -57,14 +65,17 @@ export default function StudentDashboard() {
         const profile = await apiFetch("/api/auth/me");
         setMe(profile);
 
-        const {student_id} = await apiFetch(`/api/auth/get_student?user_id=${profile.id}`);
+        const { student_id } = await apiFetch(`/api/auth/get_student?user_id=${profile.id}`);
         const timetable = await apiFetch(`/api/timetable/${student_id}`);
-
         setWeek(timetable.week ?? []);
 
-        // 🔔 fetch unread notifications count
+        // notifications badge
         const notifRes = await apiFetch("/api/students/notifications/unread");
         setUnreadCount(notifRes.unread ?? 0);
+
+        // 🔽 NEW: fetch grade/section-filtered materials for this student
+        const list = await listMaterialsForMe();
+        setMaterials(Array.isArray(list) ? list : []);
       } catch (err) {
         console.error(err);
         navigate("/");
@@ -75,13 +86,13 @@ export default function StudentDashboard() {
   }, [navigate]);
 
   const markAllRead = async () => {
-  try {
-    await apiFetch("/api/students/notifications/mark-read-not", { method: "POST" });
-    setUnreadCount(0); // immediately reset the badge
-  } catch (err) {
-    console.error("Failed to mark notifications as read:", err);
-  }
-};
+    try {
+      await apiFetch("/api/students/notifications/mark-read-not", { method: "POST" });
+      setUnreadCount(0);
+    } catch (err) {
+      console.error("Failed to mark notifications as read:", err);
+    }
+  };
 
   const logout = () => {
     sessionStorage.removeItem("accessToken");
@@ -89,25 +100,21 @@ export default function StudentDashboard() {
     navigate("/");
   };
 
-
-
   const nextClass = week?.find((d) => d.items?.length)?.items?.[0] || null;
 
-  // Dummy data for modals
+  // Dummy modal data unchanged…
   const gradesData = [
     { subject: "Mathematics", teacher: "Ms. Rodriguez", grade: "A-", percentage: "88%" },
     { subject: "Physics", teacher: "Mr. Wilson", grade: "B+", percentage: "85%" },
     { subject: "Chemistry", teacher: "Dr. Chen", grade: "A", percentage: "92%" },
     { subject: "English", teacher: "Mr. Thompson", grade: "B", percentage: "82%" },
   ];
-
   const assignmentsData = [
     { task: "Physics Lab Report", due: "Tomorrow", status: "In Progress" },
     { task: "Math Problem Set 5", due: "Friday", status: "Not Started" },
     { task: "Chemistry Quiz", due: "Next Monday", status: "Studying" },
     { task: "English Essay", due: "Next Week", status: "Planning" },
   ];
-
   const attendanceData = [
     { class: "Mathematics", attended: "12/13", percentage: "92%" },
     { class: "Physics", attended: "11/12", percentage: "92%" },
@@ -153,10 +160,7 @@ export default function StudentDashboard() {
 
           <div className="space-y-3">
             {items.map((item, idx) => (
-              <div
-                key={idx}
-                className="flex justify-between items-center p-3 bg-slate-50 rounded-lg"
-              >
+              <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
                 <div>
                   {type === "grades" && (
                     <>
@@ -173,9 +177,7 @@ export default function StudentDashboard() {
                   {type === "attendance" && (
                     <>
                       <div className="font-medium text-slate-800">{item.class}</div>
-                      <div className="text-sm text-slate-500">
-                        Attended: {item.attended}
-                      </div>
+                      <div className="text-sm text-slate-500">Attended: {item.attended}</div>
                     </>
                   )}
                 </div>
@@ -280,7 +282,6 @@ export default function StudentDashboard() {
                   </span>
                 )}
               </button>
-
             </div>
           </div>
 
@@ -310,9 +311,65 @@ export default function StudentDashboard() {
             ))}
           </div>
 
+          {/* 📚 Your Materials */}
+          <div className="stu-card p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="stu-chip">📚 Your Materials</span>
+              <button
+                className="px-3 py-1.5 text-xs rounded-lg border border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                onClick={async () => {
+                  const list = await listMaterialsForMe();
+                  setMaterials(Array.isArray(list) ? list : []);
+                }}
+              >
+                Refresh
+              </button>
+            </div>
+
+            {materials.length ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="text-left border-b border-slate-200">
+                      <th className="py-2 pr-4">Title</th>
+                      <th className="py-2 pr-4">Subject</th>
+                      <th className="py-2 pr-4">Grade</th>
+                      <th className="py-2 pr-4">Section</th>
+                      <th className="py-2 pr-4">Teacher</th>
+                      <th className="py-2 pr-4">Created</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {materials.map((m) => (
+                      <tr key={m.id} className="border-b border-slate-100">
+                        <td className="py-2 pr-4">
+                          <a className="text-emerald-700 underline" href={fileUrl(m.file_path)} target="_blank" rel="noreferrer">
+                            {m.title}
+                          </a>
+                          {m.description ? (
+                            <div className="text-xs text-slate-500">{m.description}</div>
+                          ) : null}
+                        </td>
+                        <td className="py-2 pr-4">{m.subject || "—"}</td>
+                        <td className="py-2 pr-4">{m.target_grade}</td>
+                        <td className="py-2 pr-4">{m.target_section || "All"}</td>
+                        <td className="py-2 pr-4">{m.teacher || "—"}</td>
+                        <td className="py-2 pr-4">
+                          {m.created_at ? new Date(m.created_at).toLocaleString() : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500">No materials yet for your grade/section.</p>
+            )}
+          </div>
+
           {/* Quick Actions */}
           <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Grades */}
+            {/* (unchanged cards) */}
             <div
               className="action-card relative p-6 cursor-pointer rounded-xl bg-gradient-to-br from-white to-slate-50 border border-slate-200 overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1"
               onClick={() => setShowModal("grades")}
@@ -331,7 +388,6 @@ export default function StudentDashboard() {
               <div className="h-1 bg-blue-500 rounded-full w-4/5"></div>
             </div>
 
-            {/* Assignments */}
             <div
               className="action-card relative p-6 cursor-pointer rounded-xl bg-gradient-to-br from-white to-slate-50 border border-slate-200 overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1"
               onClick={() => setShowModal("assignments")}
@@ -351,7 +407,6 @@ export default function StudentDashboard() {
               <div className="h-1 bg-green-500 rounded-full w-3/5"></div>
             </div>
 
-            {/* Attendance */}
             <div
               className="action-card relative p-6 cursor-pointer rounded-xl bg-gradient-to-br from-white to-slate-50 border border-slate-200 overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1"
               onClick={() => setShowModal("attendance")}
@@ -394,4 +449,3 @@ export default function StudentDashboard() {
     </div>
   );
 }
-
