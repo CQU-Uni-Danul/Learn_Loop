@@ -233,7 +233,13 @@ const sendNotification = async () => {
 
         {/* Quick actions */}
         <div className="tch-card p-4 flex flex-wrap gap-3">
-          <button className="btn btn-tch">Start Class</button>
+          <button 
+  className="btn btn-tch" 
+  onClick={() => window.open("https://meet.google.com/owc-giuc-zjp", "_blank")}
+>
+  Start Class
+</button>
+
           <button className="btn btn-tch-outline">Mark Attendance</button>
           <button className="btn btn-tch-outline">Create Assignment</button>
         </div>
