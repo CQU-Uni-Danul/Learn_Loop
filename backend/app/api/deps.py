@@ -7,6 +7,8 @@ from sqlalchemy.orm import Session
 from ..db.session import get_db
 from ..db.models.user import User
 from ..core.security import decode_access_token
+from ..db.models.student import Student
+from ..db.models.teacher import Teacher
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -39,4 +41,3 @@ def require_roles(allowed_roles: List[str]):
               f"access granted for {allowed_roles}")
         return current_user
     return _dep
-

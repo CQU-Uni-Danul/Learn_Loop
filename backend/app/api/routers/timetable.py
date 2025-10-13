@@ -8,6 +8,7 @@ from ...db.session import get_db
 from ...db.models.user import User
 from ...api.deps import get_current_user, require_roles
 from ...schemas.timetable import TimetableCreate
+from ...db.models.student import Student
 
 router = APIRouter( tags=["timetable"])
 
@@ -117,44 +118,47 @@ def create_timetable(
     return {"timetable": dict(row)} if row else {"success": True}
 
 
+from ...db.models.student import Student  # make sure this import exists
+
 @router.get("/{student_id}")
 def get_timetable(
     student_id: int,
     db: Session = Depends(get_db),
     current: User = Depends(get_current_user),
 ):
-    """
-    Fetch a student's timetable from DB.
-    - Admin can view any student's timetable
-    - A student can only view their own
-    """
-    if current.role != "admin" and not (
-        current.role == "student" and current.user_id == student_id
-    ):
-        raise HTTPException(status_code=403, detail="Forbidden")
+    # Map requested student_id -> owner user_id
+    owner = db.query(Student.user_id).filter(Student.student_id == student_id).first()
+    if not owner:
+        raise HTTPException(status_code=404, detail="Student not found")
+    (owner_user_id,) = owner  # unwrap tuple
 
+    # Admin OK; students must own this student_id
+    if current.role != "admin":
+        if current.role == "student" and current.user_id == owner_user_id:
+            pass  # allowed
+        else:
+            raise HTTPException(status_code=403, detail="Forbidden")
+
+    # ... keep your existing SQL below unchanged ...
     sql = text("""
-        SELECT DISTINCT
-            tt.day_of_week AS day,
-            tt.start_time AS start,
-            tt.end_time AS end,
-            c.class_name AS subject,
-            u.full_name AS teacher
-        FROM timetables tt
-        JOIN classes c ON tt.class_id = c.class_id
-        LEFT JOIN users u ON tt.teacher_id = u.user_id
-        WHERE tt.student_id = :student_id
-        ORDER BY FIELD(tt.day_of_week,
-                       'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'),
-                 tt.start_time;
-    """)
-
+    SELECT DISTINCT
+        tt.day_of_week AS day,
+        tt.start_time  AS start,
+        tt.end_time    AS end,
+        t.subject      AS subject,   -- from teachers table
+        t.full_name    AS teacher    -- from teachers table
+    FROM timetables tt
+    LEFT JOIN teachers t
+           ON t.teacher_id = tt.teacher_id
+    WHERE tt.student_id = :student_id
+    ORDER BY FIELD(tt.day_of_week,
+                   'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'),
+             tt.start_time;
+""")
     result = db.execute(sql, {"student_id": student_id})
     rows = [dict(r) for r in result.mappings().all()]
-
     if not rows:
         raise HTTPException(status_code=404, detail="No timetable found")
-
     return {"student_id": student_id, "week": group_by_day(rows)}
 
 

@@ -17,7 +17,7 @@ function App() {
         <Route path="/admin/" element={<AdminDashboard />} />
         <Route path="/" element={<LoginDashboard />} />
         <Route path="/notifications" element={<NotificationsPage />} />
-        <Route path="/student/notifications" element={<StudentNotificationsPage />} />
+        <Route path="/students/notifications" element={<StudentNotificationsPage />} />
         <Route path="/timetable" element={<TimetablePage />} />
       </Routes>
     </Router>
