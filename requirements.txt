@@ -30,15 +30,16 @@ python-multipart==0.0.9
 # 3) Start backend server (from project root):
 #    
 #    python -m uvicorn backend.app.main:app --reload --env-file backend/.env
-# 4) Start frontend (from frontend/ folder):
+
+# 4) Start frontend (should be run from frontend/ folder):
 #    npm install
 #    npm run dev
 #
+# 5) Seed the database with initial data:
+# python -m backend.app.db.seed -- to seed the database with initial data
+#
+# 6) Access the application in your browser:
 # Backend runs on:   http://127.0.0.1:8000
 # Frontend runs on:  http://127.0.0.1:5173 (default Vite port)
-# python -m backend.app.db.seed to run the seed
 
-
-#pip install -r requirements.txt  run this in terminal so you have all the deps install
-# this is for backend npm install && npm run dev
 
